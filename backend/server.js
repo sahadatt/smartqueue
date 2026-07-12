@@ -202,5 +202,12 @@ io.on('connection', async (socket) => {
     socket.on('disconnect', () => console.log(`User Disconnected: ${socket.id}`));
 });
 
+app.get("/", (req, res) => {
+  res.send("SmartQueue Backend is Running 🚀");
+});
+
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Backend server running on port ${PORT}`));
+
+server.listen(PORT, () => {
+  console.log(`Backend server running on port ${PORT}`);
+});
