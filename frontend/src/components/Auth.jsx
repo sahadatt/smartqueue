@@ -18,7 +18,7 @@ const Auth = ({ onLoginSuccess }) => {
 
         try {
             const response = await fetch(
-                `https://smartqueue-oi3s.onrender.com${endpoint}`,
+                `https://smartqueue-u73d.onrender.com${endpoint}`,
                 {
                     method: 'POST',
                     headers: {

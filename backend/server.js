@@ -9,12 +9,22 @@ require('dotenv').config();
 
 const app = express();
 
-app.use(cors({ origin: "*", methods: ["GET", "POST"] }));
-app.use(express.json()); 
+const corsOptions = {
+  origin: [
+    "https://smartqueue-blond.vercel.app",
+    "http://localhost:3000"
+  ],
+  methods: ["GET", "POST"],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
+app.use(express.json());
 
 const server = http.createServer(app);
+
 const io = new Server(server, {
-    cors: { origin: "*", methods: ["GET", "POST"] }
+  cors: corsOptions
 });
 
 // 🔌 MongoDB Cloud Connection
