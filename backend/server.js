@@ -14,6 +14,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'https://smartqueue-blond.verce
 const allowedOrigins = [
   FRONTEND_URL,
   'http://localhost:3000',
+  'http://172.20.10.2:3000'
 ];
 
 const corsOptions = {

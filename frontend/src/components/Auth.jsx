@@ -17,19 +17,21 @@ const Auth = ({ onLoginSuccess }) => {
             : '/api/auth/signup';
 
         try {
-            const response = await fetch(
-                `https://smartqueue-u73d.onrender.com${endpoint}`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        username,
-                        password,
-                    }),
-                }
-            );
+            const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || `http://${window.location.hostname}:5000`;
+            const response = await fetch(`${BACKEND_URL}${endpoint}`, {
+    method: 'POST',
+    // baaki ka same code...
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username,
+                    password // (aur jo bhi data aap bhej rahe hain)
+                })
+            });
+
+            // Iske niche aapka aage ka code hoga jaise:
+            // const data = await response.json();
 
             const data = await response.json();
 
