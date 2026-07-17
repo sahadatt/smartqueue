@@ -47,9 +47,7 @@ body {
     rgba(255,255,255,0) 15%, 
     rgba(255,255,255,0) 85%, 
     rgba(255,255,255,1) 100%
-  ), url('C:\Users\ansar\Desktop\smartqueue\frontend\src\assets\ChatGPT Image Jul 17, 2026, 01_58_41 5+65.png') no-repeat center center;
-  background-size: cover;
-  opacity: 0.9;
+  ), 
 }
 .quick-actions-sidebar {
   padding: 16px;
