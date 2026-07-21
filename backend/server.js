@@ -11,23 +11,9 @@ const app = express();
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://smartqueue-blond.vercel.app';
 
-const allowedOrigins = [
-  FRONTEND_URL,
-  'http://localhost:3000',
-  'http://172.20.10.2:3000'
-];
-
+// 👇 Isko 'true' set kar diya hai taaki aapke Local Wi-Fi (172.20.10.2) aur mobile par data block na ho
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow server-to-server tools, Postman, curl, etc.
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    return callback(new Error('CORS Not Allowed'));
-  },
+  origin: true, 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true,
 };
@@ -38,9 +24,10 @@ app.use(express.json());
 
 const server = http.createServer(app);
 
+// 👇 Socket.io mein bhi 'origin: true' laga diya hai taaki mobile par Live Counter chal sake
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: true, 
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
   },
@@ -66,7 +53,6 @@ const queueSchema = new mongoose.Schema({
 });
 const Queue = mongoose.model('Queue', queueSchema);
 
-// ✅ Patient Schema with mobileNumber field
 const patientSchema = new mongoose.Schema({
   name: { type: String, required: true },
   mobileNumber: { type: String, required: true },
@@ -84,7 +70,6 @@ async function getOrCreateQueue() {
   return queue;
 }
 
-// Live Status Sync Broadcast
 async function broadcastQueueStatus() {
   const queue = await getOrCreateQueue();
   const patients = await Patient.find().sort({ tokenNumber: 1 });
@@ -101,26 +86,32 @@ app.get('/', (req, res) => {
   res.send('SmartQueue Backend is Running 🚀');
 });
 
-// 🔐 Authentication Routes
+// ==========================================
+// 🔐 SIMPLE AUTHENTICATION ROUTES
+// ==========================================
+
 app.post('/api/auth/signup', async (req, res) => {
   try {
     const { username, password } = req.body;
 
     if (!username || !password) {
-      return res.status(400).json({ message: 'Username aur password required hai!' });
+      return res.status(400).json({ message: 'Username aur password bharna zaroori hai!' });
     }
 
     const existingUser = await User.findOne({ username });
     if (existingUser) {
-      return res.status(400).json({ message: 'Username pehle se hi exist karta hai!' });
+      return res.status(400).json({ message: '❌ Yeh username pehle se exist karta hai!' });
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new User({ username, password: hashedPassword });
+    const newUser = new User({ 
+      username, 
+      password: hashedPassword 
+    });
+    
     await newUser.save();
-
     res.status(201).json({ message: 'Registration successful!' });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -136,10 +127,14 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const user = await User.findOne({ username });
-    if (!user) return res.status(400).json({ message: 'Invalid Credentials!' });
+    if (!user) {
+      return res.status(400).json({ message: '❌ Invalid Username or Password!' });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid Credentials!' });
+    if (!isMatch) {
+      return res.status(400).json({ message: '❌ Invalid Username or Password!' });
+    }
 
     const token = jwt.sign(
       { id: user._id },
@@ -147,13 +142,16 @@ app.post('/api/auth/login', async (req, res) => {
       { expiresIn: '1d' }
     );
 
-    res.json({ token, username });
+    res.json({ token, username: user.username });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 🎫 PATIENT QUICK QR CHECK-IN ROUTE
+// ==========================================
+// 🎫 PATIENT ROUTES & WEBSOCKETS
+// ==========================================
+
 app.post('/api/auth/patient-checkin', async (req, res) => {
   try {
     const { patientName, mobileNumber } = req.body;
@@ -180,7 +178,6 @@ app.post('/api/auth/patient-checkin', async (req, res) => {
     });
 
     await newPatient.save();
-
     await broadcastQueueStatus();
 
     res.status(201).json({
@@ -194,7 +191,6 @@ app.post('/api/auth/patient-checkin', async (req, res) => {
   }
 });
 
-// 🚪 PATIENT LEAVE QUEUE ROUTE
 app.post('/api/auth/patient-leave', async (req, res) => {
   try {
     const { tokenToRemove } = req.body;
@@ -212,9 +208,9 @@ app.post('/api/auth/patient-leave', async (req, res) => {
   }
 });
 
-// 🌐 WebSockets Master Logic
 io.on('connection', async (socket) => {
-  console.log(`User Connected: ${socket.id}`);
+  // 👇 Terminal par aane wala clear message update kar diya hai
+  console.log(`🟢 Naya Device Connect Hua! (Ab Total log: ${io.engine.clientsCount})`);
 
   try {
     const queue = await getOrCreateQueue();
@@ -229,7 +225,7 @@ io.on('connection', async (socket) => {
     console.error(err);
   }
 
-  socket.on('next-patient', async () => {
+  socket.on('next-token', async () => {
     try {
       const queue = await getOrCreateQueue();
       if (queue.currentToken < queue.totalTokensDistributed) {
@@ -242,7 +238,7 @@ io.on('connection', async (socket) => {
     }
   });
 
-  socket.on('previous-patient', async () => {
+  socket.on('prev-token', async () => {
     try {
       const queue = await getOrCreateQueue();
       if (queue.currentToken > 1) {
@@ -328,7 +324,10 @@ io.on('connection', async (socket) => {
     }
   });
 
-  socket.on('disconnect', () => console.log(`User Disconnected: ${socket.id}`));
+  // 👇 Disconnect hone wala message bhi clean kar diya hai
+  socket.on('disconnect', () => {
+    console.log(`🔴 Ek Device Disconnect Hua! (Ab Total log: ${io.engine.clientsCount})`);
+  });
 });
 
 const PORT = process.env.PORT || 5000;
