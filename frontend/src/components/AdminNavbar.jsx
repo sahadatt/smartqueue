@@ -31,7 +31,12 @@ export default function AdminNavbar({ isSidebarOpen, setIsSidebarOpen, username,
 
       <div className="nav-right" style={{ position: 'relative' }}>
         <div className="profile-box" onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: isMobile ? '6px' : '10px' }}>
-          
+          <img 
+  src="/images/logo.webp" 
+  alt="Logo" 
+  style={{ height: '32px', objectFit: 'contain' }}
+  onError={(e) => { e.target.style.display = 'none'; }} 
+/>
           <img 
             src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${username}&backgroundColor=e1ecf9`} 
             alt="Dr" 
