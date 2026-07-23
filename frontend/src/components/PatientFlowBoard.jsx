@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { FiCheckSquare, FiActivity, FiLoader, FiEdit2, FiTrash2, FiPhone, FiClock, FiSearch } from 'react-icons/fi';
 
 export default function PatientFlowBoard({ 
+  isMobile, 
   visitedPatients, 
   currentConsultingPatient, 
   waitingPatients, 
@@ -10,7 +11,7 @@ export default function PatientFlowBoard({
   triggerDeleteModal,
   maskMobileNumber,
   activeFilter = 'all',
-  onClearHistory // 🌟 Naya prop clear history modal trigger karne ke liye
+  onClearHistory
 }) {
   
   const visitedListRef = useRef(null);
@@ -18,13 +19,9 @@ export default function PatientFlowBoard({
 
   useEffect(() => {
     if (visitedListRef.current) {
-      requestAnimationFrame(() => {
-        if (visitedListRef.current) {
-          visitedListRef.current.scrollTop = visitedListRef.current.scrollHeight;
-        }
-      });
+      visitedListRef.current.scrollTop = visitedListRef.current.scrollHeight;
     }
-  }, [visitedPatients]);
+  }, [visitedPatients.length]);
 
   const formatTimeWithSeconds = (timeData) => {
     if (!timeData) return "--:--:--";
@@ -56,8 +53,8 @@ export default function PatientFlowBoard({
       boxSizing: 'border-box', 
       display: 'flex', 
       flexDirection: 'column', 
-      height: 'calc(100vh - 220px)', 
-      minHeight: '400px'
+      height: 'auto', 
+      maxHeight: '100%' 
     }}>
        
        <style>{`
@@ -74,11 +71,13 @@ export default function PatientFlowBoard({
 
        {/* 1. RECENTLY COMPLETED */}
        {(activeFilter === 'all' || activeFilter === 'completed') && (
-         <div style={{ display: 'flex', flexDirection: 'column', flex: activeFilter === 'completed' ? 1 : '0.8', minHeight: 0 }}>
+         <div style={{ display: 'flex', flexDirection: 'column', flex: activeFilter === 'completed' ? 1 : 'none', minHeight: 0 }}>
            <h3 style={{ margin: '0 0 6px 0', color: '#10B981', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
              <FiCheckSquare size={15} /> Recently Completed ({visitedPatients.length})
            </h3>
-           <div ref={visitedListRef} className="flow-scrollbar" style={{ overflowY: 'auto', flex: 1, minHeight: 0, paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+           
+           {/* 🌟 FIX: Agar 'all' (Total) hai toh mobile pe '48px' (1 card), aur agar 'completed' (Done) click kiya hai toh '195px' (4 cards) */}
+           <div ref={visitedListRef} className="flow-scrollbar" style={{ overflowY: 'auto', maxHeight: isMobile ? (activeFilter === 'all' ? '48px' : '195px') : '138px', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
              {visitedPatients.length === 0 ? (
                <div style={{ fontSize: '12px', color: '#94A3B8', fontStyle: 'italic' }}>No completed patients yet.</div>
              ) : (
@@ -128,11 +127,13 @@ export default function PatientFlowBoard({
 
        {/* 3. WAITING LINE */}
        {(activeFilter === 'all' || activeFilter === 'remaining') && (
-         <div style={{ display: 'flex', flexDirection: 'column', flex: activeFilter === 'remaining' ? 1 : '1', minHeight: 0 }}>
+         <div style={{ display: 'flex', flexDirection: 'column', flex: activeFilter === 'remaining' ? 1 : 'none', minHeight: 0 }}>
            <h3 style={{ margin: '0 0 6px 0', color: '#8B5CF6', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
              <FiLoader size={15} /> Waiting Line ({waitingPatients.length})
            </h3>
-           <div className="flow-scrollbar" style={{ overflowY: 'auto', flex: 1, minHeight: 0, paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+           
+           {/* 🌟 FIX: Agar 'all' (Total) hai toh mobile pe '48px' (1 card), aur agar 'remaining' (Wait) click kiya hai toh '195px' (4 cards) */}
+           <div className="flow-scrollbar" style={{ overflowY: 'auto', maxHeight: isMobile ? (activeFilter === 'all' ? '48px' : '195px') : '138px', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
              {waitingPatients.length === 0 ? (
                <div style={{ fontSize: '12px', color: '#94A3B8', fontStyle: 'italic' }}>Queue is empty.</div>
              ) : (
@@ -162,14 +163,12 @@ export default function PatientFlowBoard({
        {activeFilter === 'deleted' && (
          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
            
-           {/* Header with Title, Search Bar and Clear All Button */}
            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexShrink: '0', gap: '8px' }}>
              <h3 style={{ margin: 0, color: '#EF4444', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '5px' }}>
                <FiTrash2 size={15} /> Deleted / Reset History ({filteredDeletedPatients.length})
              </h3>
              
              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-               {/* Search Input Box */}
                <div style={{ position: 'relative', width: '160px' }}>
                  <FiSearch size={13} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
                  <input 
@@ -179,7 +178,7 @@ export default function PatientFlowBoard({
                    onChange={(e) => setDeletedSearchQuery(e.target.value)}
                    style={{
                      width: '100%',
-                     padding: '5px 8px 5px 26px',
+                   padding: '5px 8px 5px 26px',
                      borderRadius: '6px',
                      border: '1px solid #CBD5E1',
                      fontSize: '11px',
@@ -190,7 +189,6 @@ export default function PatientFlowBoard({
                  />
                </div>
 
-               {/* 🌟 Clear History Button */}
                <button 
                  onClick={onClearHistory}
                  style={{
@@ -214,7 +212,7 @@ export default function PatientFlowBoard({
              </div>
            </div>
 
-           <div className="flow-scrollbar" style={{ overflowY: 'auto', flex: 1, minHeight: 0, paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+           <div className="flow-scrollbar" style={{ overflowY: 'auto', maxHeight: isMobile ? '195px' : 'none', flex: 1, minHeight: 0, paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
              {filteredDeletedPatients.length === 0 ? (
                <div style={{ fontSize: '12px', color: '#94A3B8', fontStyle: 'italic' }}>No deleted or reset records found.</div>
              ) : (

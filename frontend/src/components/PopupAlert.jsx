@@ -4,7 +4,7 @@ import { FiX, FiCheck, FiAlertTriangle, FiInfo, FiTrash2 } from 'react-icons/fi'
 export default function BeautifulModal({ isOpen, onClose, title, icon, children }) {
   if (!isOpen) return null;
 
-  // Theme Logic: Emoji ke hisab se modern icons aur colors set karna
+  // Theme Logic: Set modern icons and colors based on the emoji
   let themeColor = '#1A73E8'; // Default Blue (Info)
   let bgLight = '#EFF6FF';
   let IconComponent = FiInfo;

@@ -16,12 +16,30 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || `http://${window.locati
 const socket = io(BACKEND_URL);
 
 function App() {
+  useEffect(() => {
+    const imagesToPreload = [
+      "/images/plate-bg.webp",
+      "/images/serving.webp",
+      "/images/namaste.webp",
+      "/images/doctor.webp",
+      "/images/people.webp",
+      "/images/hospital-logo.webp",
+      "/images/people.webp",
+      "/images/hourglass.webp"
+    ];
+
+    imagesToPreload.forEach((imageSrc) => {
+      const preloadImage = new Image();
+      preloadImage.src = imageSrc;
+    });
+  }, []);
+  
   const [currentLiveToken, setCurrentLiveToken] = useState(1);
   const [totalTokensDistributed, setTotalTokensDistributed] = useState(0); 
   const [patients, setPatients] = useState([]);
   const [initialLoad, setInitialLoad] = useState(false);
   
-  // 🌟 FIX: Dono storage (Local aur Session) check karenge taaki token miss na ho
+  // 🌟 FIX: Checking both storages (Local and Session) to ensure the token is not missed
   const [authToken, setAuthToken] = useState(localStorage.getItem('token') || sessionStorage.getItem('token'));
   const [adminUser, setAdminUser] = useState(localStorage.getItem('username') || sessionStorage.getItem('username'));
   
@@ -67,7 +85,7 @@ function App() {
             /> 
             : 
             <Auth onLoginSuccess={(user) => { 
-              // 🌟 FIX: Login hote hi turant state set kar do taaki bina page reload kiye dashboard khul jaye
+              // 🌟 FIX: Set state immediately upon login so the dashboard opens without a page reload
               const token = localStorage.getItem('token') || sessionStorage.getItem('token');
               setAuthToken(token);
               setAdminUser(user);

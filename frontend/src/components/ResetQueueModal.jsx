@@ -22,9 +22,9 @@ export default function ResetQueueModal({ isOpen, onClose, onConfirm, password, 
         </div>
 
         {/* Text Details */}
-        <h2 style={styles.title}>Queue Reset Karein?</h2>
+        <h2 style={styles.title}>Reset Queue?</h2>
         <p style={styles.subtitle}>
-          Aap saare patients ka data delete karne jaa rahe hain. Kripya confirm karne ke liye Admin Password daalein.
+          You are about to delete all patient data. Please enter the Admin Password to confirm.
         </p>
 
         {/* Password Input Area */}
@@ -48,7 +48,7 @@ export default function ResetQueueModal({ isOpen, onClose, onConfirm, password, 
           
           <button onClick={onConfirm} style={styles.confirmBtn}>
             <div style={styles.confirmIconBox}><FiTrash2 size={12} /></div> 
-            Ha, Reset Karein
+            Yes, Reset
           </button>
         </div>
       </div>

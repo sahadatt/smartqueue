@@ -64,7 +64,7 @@ export default function PatientCheckin() {
               {mobileError && <div style={styles.checkinErrorText}><FiAlertCircle size={10}/> {mobileError}</div>}
             </div>
             <button type="submit" disabled={loading} style={{ ...styles.checkinSubmitBtn, justifyContent: loading ? 'center' : 'flex-start', opacity: loading ? 0.85 : 1 }}>
-              {loading ? (<><FiLoader size={18} className="loading-spinner" /><span>Alloting Token...</span></>) : (<><FiFileText size={16} /><span>Get Token Number</span><div style={{ flexGrow: 1 }}></div><FiChevronRight size={18} /></>)}
+              {loading ? (<><FiLoader size={18} className="loading-spinner" /><span>Allotting Token...</span></>) : (<><FiFileText size={16} /><span>Get Token Number</span><div style={{ flexGrow: 1 }}></div><FiChevronRight size={18} /></>)}
             </button>
           </form>
           <div style={styles.checkinFooterText}><FiShield size={12} color="#2563EB" /> Your Health, Our Priority</div>
@@ -76,7 +76,7 @@ export default function PatientCheckin() {
 
 const styles = {
   checkinPageWrapper: { backgroundColor: "#E8F0FE", background: "url('/images/checkin-bg.png') no-repeat center center", backgroundSize: 'cover', minHeight: '100vh', padding: '20px', boxSizing: 'border-box', display: 'flex', justifyContent: 'center', alignItems: 'center', fontFamily: 'sans-serif' },
-  checkinContainer: { backgroundColor: '#FFFFFF', borderRadius: '24px', width: '100%', maxWidth: '380px', padding: '24px', boxShadow: '0 25px 60px rgba(0,0,0,0.1)', position: 'relative', overflow: 'hidden', boxSizing: 'border-box' },
+  checkinContainer: { backgroundColor: '#FFFFFF', borderRadius: '24px', width: '100%', maxWidth: '360px', padding: '24px', boxShadow: '0 25px 60px rgba(0,0,0,0.1)', position: 'relative', overflow: 'hidden', boxSizing: 'border-box' },
   bgPlusLeft: { position: 'absolute', top: '20px', left: '15px', fontSize: '50px', color: '#EFF6FF', fontWeight: '900', zIndex: 0, userSelect: 'none' },
   bgPlusRight: { position: 'absolute', top: '40px', right: '10px', fontSize: '80px', color: '#EFF6FF', fontWeight: '900', zIndex: 0, userSelect: 'none' },
   bgWaveBottom: { position: 'absolute', bottom: 0, left: 0, width: '100%', height: '110px', background: "url('data:image/svg+xml;utf8,<svg viewBox=\"0 0 1440 320\" xmlns=\"http://www.w3.org/2000/svg\"><path fill=\"%23EFF6FF\" fill-opacity=\"1\" d=\"M0,224L48,229.3C96,235,192,245,288,229.3C384,213,480,171,576,154.7C672,139,768,149,864,165.3C960,181,1056,203,1152,208C1248,213,1344,203,1392,197.3L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z\"></path></svg>')", backgroundSize: 'cover', backgroundPosition: 'bottom', zIndex: 0 },

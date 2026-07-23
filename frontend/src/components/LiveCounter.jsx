@@ -34,8 +34,8 @@ export default function LiveCounter({ currentLiveToken, isNextDisabled, socket, 
           to { stroke-dashoffset: 0; }
         }
         .flowing-ekg {
-          stroke-dasharray: 90 160; /* Line aur gap ko adjust kiya taaki complex wave smooth dikhe */
-          animation: ekg-flow-rtl 2.5s linear infinite; /* Thodi smooth aur steady speed */
+          stroke-dasharray: 90 160; /* Adjusted line and gap for a smooth complex wave */
+          animation: ekg-flow-rtl 2.5s linear infinite; /* Smooth and steady speed */
         }
 
         /* Button Hover Bouncy Animations */
@@ -44,14 +44,14 @@ export default function LiveCounter({ currentLiveToken, isNextDisabled, socket, 
         }
         .btn-prev:hover { 
           transform: translateX(-6px) scale(1.03); 
-          background-color: #E2E8F0 !important; 
+          backgroundColor: #E2E8F0 !important; 
           box-shadow: -4px 4px 12px rgba(0,0,0,0.06);
         }
         
         .btn-next:hover:not(:disabled) { 
           transform: translateX(6px) scale(1.03); 
           box-shadow: 4px 4px 18px rgba(16, 185, 129, 0.3);
-          background-color: #059669 !important; 
+          backgroundColor: #059669 !important; 
         }
         .btn-next:disabled { cursor: not-allowed; opacity: 0.6; }
       `}</style>
@@ -126,20 +126,20 @@ const UltraFadedComplexEKG = () => (
       {/* 🌟 Ultra-Soft Gradient */}
       <linearGradient id="ultraFikaGradient" x1="100%" y1="0%" x2="0%" y2="0%">
         <stop offset="0%" stopColor="#10B981" stopOpacity="0" />
-        <stop offset="50%" stopColor="#10B981" stopOpacity="0.25" /> {/* Opacity aur gira di taaki ekdum soft lage */}
+        <stop offset="50%" stopColor="#10B981" stopOpacity="0.25" /> {/* Decreased opacity to make it look extremely soft */}
         <stop offset="100%" stopColor="#10B981" stopOpacity="0" />
       </linearGradient>
     </defs>
 
-    {/* Naya Complex Path: P-wave, Q-dip, R-peak, S-dip, T-wave jaisa detail */}
-    {/* Background Track (Ekdum halka) */}
+    {/* New Complex Path: Detailed like P-wave, Q-dip, R-peak, S-dip, T-wave */}
+    {/* Background Track (Very light) */}
     <path 
       d="M 0 30 L 20 30 L 25 24 L 30 30 L 40 30 L 45 42 L 55 5 L 63 52 L 70 30 L 85 30 L 95 18 L 105 30 L 150 30" 
       stroke="#10B981" 
-      strokeWidth="1" /* Thoda patla kar diya */
+      strokeWidth="1" /* Made it slightly thinner */
       strokeLinecap="round" 
       strokeLinejoin="round" 
-      opacity="0.25" /* Background ko lagbhag gayab kar diya */
+      opacity="0.25" /* Background almost completely faded */
     />
     
     {/* Animated Flowing Line with Complex Wave */}

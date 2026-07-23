@@ -164,18 +164,18 @@ export default function PatientView({ currentLiveToken, patients, initialLoad })
 
         <div style={styles.uiWelcomeCard}>
             <div style={{flex: 1, zIndex: 2, paddingRight: '55px'}}>
-              <div style={styles.uiWelcomeTitle}>Namaste, {patientName}!</div>
+              <div style={styles.uiWelcomeTitle}>Hello, {patientName}!</div>
               <div style={styles.uiWelcomeLine}></div>
-              <div style={styles.uiWelcomeSub}>Hum aapki behtar seva ke liye taiyaar hain.</div>
+              <div style={styles.uiWelcomeSub}>We are here to serve you better.</div>
             </div>
             <div style={styles.uiWelcomeGraphic}>
-               <img src="/images/namaste.png" alt="Namaste" style={{ width: '65px', height: '65px', objectFit: 'contain' }} />
+               <img src="/images/namaste.webp" alt="Namaste" style={{ width: '65px', height: '65px', objectFit: 'contain' }} />
             </div>
         </div>
 
         <div style={styles.uiTokenCard}>
             <div style={styles.uiDotPatternLeft}></div><div style={styles.uiDotPatternRight}></div>
-            <div style={styles.uiTokenHeader}><div style={styles.uiTokenDash}></div><span>Aapka Token No.</span><div style={styles.uiTokenDash}></div></div>
+            <div style={styles.uiTokenHeader}><div style={styles.uiTokenDash}></div><span>Your Token No.</span><div style={styles.uiTokenDash}></div></div>
             <div style={styles.uiTokenNumber}>{myToken || '--'}</div>
             <div style={styles.uiTokenBottomDash}></div>
             
@@ -189,14 +189,14 @@ export default function PatientView({ currentLiveToken, patients, initialLoad })
         {isMyTurn ? (
           <div style={{ backgroundColor: '#10B981', color: 'white', borderRadius: '14px', padding: '14px', textAlign: 'center', animation: 'pulse 2s infinite', boxShadow: '0 8px 20px rgba(16, 185, 129, 0.3)' }}>
             <FiCheckCircle size={32} style={{ marginBottom: '6px' }} />
-            <div style={{ fontSize: 18, fontWeight: 900 }}>Aapki Baari Hai!</div>
-            <div style={{ fontSize: 11, marginTop: '2px', opacity: 0.9 }}>Kripya Doctor ke cabin mein pravesh karein.</div>
+            <div style={{ fontSize: 18, fontWeight: 900 }}>It's Your Turn!</div>
+            <div style={{ fontSize: 11, marginTop: '2px', opacity: 0.9 }}>Please proceed to the Doctor's cabin.</div>
           </div>
         ) : (
           <>
             <div style={styles.uiServingCard}>
                 <div style={styles.uiServingIconBox}>
-                   <img src="/images/doctor.png" alt="Doctor" style={{ width: '55px', height: '55px', objectFit: 'contain' }} />
+                   <img src="/images/doctor.webp" alt="Doctor" style={{ width: '55px', height: '55px', objectFit: 'contain' }} />
                 </div>
                 <div style={{ zIndex: 2 }}>
                     <div style={styles.uiServingBadge}><span style={styles.uiPulseDot}></span> Now Serving</div>
@@ -209,7 +209,7 @@ export default function PatientView({ currentLiveToken, patients, initialLoad })
                       </div>
                     ) : (
                       <div style={{ fontSize: '11px', opacity: 0.95, fontWeight: '600', marginTop: '1px', letterSpacing: '0.3px' }}>
-                        Proessing o
+                        Processing...
                       </div>
                     )}
                 </div>
@@ -219,11 +219,11 @@ export default function PatientView({ currentLiveToken, patients, initialLoad })
             <div style={styles.uiWaitCard}>
                 <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
                     <div style={styles.uiWaitIconBox}>
-                        <img src="/images/people.png" alt="People Waiting" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
+                        <img src="/images/people.webp" alt="People Waiting" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
                     </div>
                     <div>
-                        <div style={styles.uiWaitTitle}>Aapke aage <span style={{color: '#16A34A', fontSize: 15}}>{patientsAhead}</span> patients aur hain.</div>
-                        <div style={styles.uiWaitSub}>Hum koshish kar rahe hain ki aapka number jaldi aaye.</div>
+                        <div style={styles.uiWaitTitle}>There are <span style={{color: '#16A34A', fontSize: 15}}>{patientsAhead}</span> patients ahead of you.</div>
+                        <div style={styles.uiWaitSub}>We are working to serve you as quickly as possible.</div>
                     </div>
                 </div>
                 <FiChevronRight size={18} color="#94A3B8" />
@@ -231,10 +231,10 @@ export default function PatientView({ currentLiveToken, patients, initialLoad })
 
             <div style={styles.uiTimerCard}>
                  <div style={styles.uiTimerIconBox}>
-                     <img src="/images/hourglass.png" alt="Hourglass" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
+                     <img src="/images/hourglass.webp" alt="Hourglass" style={{ width: '42px', height: '42px', objectFit: 'contain' }} />
                  </div>
                  <div style={{ zIndex: 2 }}>
-                    <div style={styles.uiTimerTitle}>Aapka Number Kab Aayega?</div>
+                    <div style={styles.uiTimerTitle}>When Will Your Turn Come?</div>
                     <div style={styles.uiTimerSub}>Estimated Waiting Time</div>
                     <div style={styles.uiTimerClock}>{hours}:{minutes}:{seconds}</div>
                     <div style={styles.uiTimerFormat}>HH : MM : SS</div>
@@ -245,44 +245,44 @@ export default function PatientView({ currentLiveToken, patients, initialLoad })
         )}
 
         <button onClick={() => setIsLeaveModalOpen(true)} className="leave-btn" style={styles.uiLeaveBtn}>
-            <FiTrash2 size={13} /> Leave Queue (Token Delete Karein)
+            <FiTrash2 size={13} /> Leave Queue (Delete Token)
         </button>
 
-        {/* 👇 Yahan Shield ke andar FiCheck (tick) icon laga diya gaya hai */}
+        {/* 👇 Added a FiCheck (tick) icon inside the Shield here */}
         <div style={styles.uiFooter}>
           <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
             <FiShield size={13} color="#3B82F6" />
             <FiCheck size={7} color="#FFFFFF" style={{ position: 'absolute', fontWeight: 'bold' }} />
           </span> 
-          Aapka data surakshit hai. Dhanyavaad!
+          Your data is safe and secure. Thank you!
         </div>
       </div>
       
-      <BeautifulModal isOpen={isLeaveModalOpen} onClose={() => setIsLeaveModalOpen(false)} title="Queue Chhodein?" icon="⚠️">
+      <BeautifulModal isOpen={isLeaveModalOpen} onClose={() => setIsLeaveModalOpen(false)} title="Leave Queue?" icon="⚠️">
         <p style={{ margin: '0 0 20px 0', color: '#64748B', fontSize: '15px', textAlign: 'center' }}>
-          Kya aap sach mein apna token delete karke line se bahar jana chahte hain?
+          Are you sure you want to delete your token and leave the queue?
         </p>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'space-between' }}>
           <button onClick={() => setIsLeaveModalOpen(false)} style={styles.modalCancelBtn}>Cancel</button>
-          <button onClick={executeLeaveQueue} style={styles.modalDeleteBtn}>Ha, Chhodein</button>
+          <button onClick={executeLeaveQueue} style={styles.modalDeleteBtn}>Yes, Leave</button>
         </div>
       </BeautifulModal>
 
       <BeautifulModal isOpen={leaveSuccessOpen} onClose={handleLeaveSuccessClose} title="Token Deleted" icon="✅">
         <p style={{ margin: '0 0 24px 0', color: '#64748B', fontSize: '15px', textAlign: 'center', fontWeight: '500' }}>
-          Aapka token safaltapurvak delete ho gaya hai. Ab aap line mein nahi hain.
+          Your token has been successfully deleted. You are no longer in the queue.
         </p>
         <button onClick={handleLeaveSuccessClose} style={{ width: '100%', padding: '14px', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', backgroundColor: '#10B981', color: '#FFFFFF', boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.3)' }}>
-          Theek Hai
+          Okay
         </button>
       </BeautifulModal>
 
       <BeautifulModal isOpen={deletedAlertOpen} onClose={handleDeletedAlertClose} title="Token Cancelled" icon="🚨">
         <p style={{ margin: '0 0 24px 0', color: '#64748B', fontSize: '15px', textAlign: 'center', fontWeight: '500' }}>
-          Aapka token Admin dwara cancel/delete kar diya gaya hai ya line Reset hui hai. Kripya naya Token lein.
+          Your token has been cancelled/deleted by the Admin, or the queue was reset. Please get a new Token.
         </p>
         <button onClick={handleDeletedAlertClose} style={{ width: '100%', padding: '14px', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', backgroundColor: '#EF4444', color: '#FFFFFF', boxShadow: '0 10px 15px -3px rgba(239, 68, 68, 0.3)' }}>
-          Naya Token Lein
+          Get New Token
         </button>
       </BeautifulModal>
 
@@ -310,7 +310,7 @@ export default function PatientView({ currentLiveToken, patients, initialLoad })
           content: "";
           position: absolute;
           top: -15px; left: -15px; right: -15px; bottom: -15px; 
-          background: url('/images/plate-bg.png') center/cover no-repeat;
+          background: url('/images/plate-bg.webp') center/cover no-repeat;
           filter: blur(1px); 
           z-index: -2;
         }
@@ -339,17 +339,17 @@ export default function PatientView({ currentLiveToken, patients, initialLoad })
 }
 
 const styles = {
-  patientPageWrapper: { background: "url('/images/bg.png') no-repeat center center", backgroundSize: 'cover', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px', boxSizing: 'border-box', fontFamily: 'sans-serif' },
+  patientPageWrapper: { background: "url('/images/bg.webp') no-repeat center center", backgroundSize: 'cover', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px', boxSizing: 'border-box', fontFamily: 'sans-serif' },
   patientContainer: { 
       backdropFilter: 'blur(10px)', 
       borderRadius: '20px', 
       width: '100%', 
-      maxWidth: '380px', 
-      minHeight: '550px', 
+      maxWidth: '360px', 
+      minHeight: '500px', 
       padding: '20px 18px', 
       display: 'flex', 
       flexDirection: 'column', 
-      gap: '10px', 
+      gap: '4px', 
       transition: 'all 0.5s ease', 
       boxSizing: 'border-box', 
       margin: 'auto' 
@@ -362,7 +362,7 @@ const styles = {
   uiWelcomeSub: { fontSize: '12px', color: '#475569', fontWeight: '500', lineHeight: 1.2 },
   uiWelcomeGraphic: { position: 'absolute', right: '10px', bottom: '-4px', zIndex: 1 },
   
-  uiTokenCard: { backgroundColor: '#FFFFFF', borderRadius: '14px', padding: '6px 12px', textAlign: 'center', position: 'relative', boxShadow: '0 10px 20px rgba(0, 0, 0, 0.06)' },
+  uiTokenCard: { backgroundColor: '#FFFFFF', borderRadius: '14px', padding: '4px 6px', textAlign: 'center', position: 'relative', boxShadow: '0 10px 20px rgba(0, 0, 0, 0.06)' },
   uiDotPatternLeft: { position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '40px', backgroundImage: 'radial-gradient(circle, #CBD5E1 2px, transparent 2.5px)', backgroundSize: '8px 8px' },
   uiDotPatternRight: { position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '40px', backgroundImage: 'radial-gradient(circle, #CBD5E1 2px, transparent 2.5px)', backgroundSize: '8px 8px' },
   uiTokenHeader: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '12px', fontWeight: '700', color: '#1E3A8A' },
@@ -382,7 +382,7 @@ const styles = {
       top: 0, 
       bottom: 0, 
       width: '40%', 
-      background: "url('/images/serving.png') left center/cover no-repeat", 
+      background: "url('/images/serving.webp') left center/cover no-repeat", 
       opacity: 0.9, 
       WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 40%)', 
       maskImage: 'linear-gradient(to right, transparent 0%, black 40%)',

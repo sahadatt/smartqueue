@@ -54,7 +54,7 @@ export default function Login({ onLoginSuccess }) {
           }
           if (onLoginSuccess) onLoginSuccess(data.username);
         } else {
-          throw new Error(data.message || 'Login fail ho gaya!');
+          throw new Error(data.message || 'Login failed!');
         }
       } else {
         const res = await fetch(`${BACKEND_URL}/api/auth/signup`, { 
@@ -64,15 +64,15 @@ export default function Login({ onLoginSuccess }) {
         });
         const data = await res.json();
         if (res.ok) {
-          setMessage('Registration successful! Ab aap login kar sakte hain.');
+          setMessage('Registration successful! You can now log in.');
           setIsLogin(true);
           setPassword('');
         } else {
-          throw new Error(data.message || 'Registration fail hua!');
+          throw new Error(data.message || 'Registration failed!');
         }
       }
     } catch (err) {
-      setError(err.message || 'Server se connect nahi ho pa raha hai.');
+      setError(err.message || 'Unable to connect to the server.');
     }
     setLoading(false);
   };
@@ -173,9 +173,9 @@ export default function Login({ onLoginSuccess }) {
 
           <p style={styles.toggleText}>
             {isLogin ? (
-              <>Naya account banana hai? <span onClick={handleModeSwitch} style={styles.link}>Signup karein</span></>
+              <>Need a new account? <span onClick={handleModeSwitch} style={styles.link}>Sign up</span></>
             ) : (
-              <>Pehle se account hai? <span onClick={handleModeSwitch} style={styles.link}>Login karein</span></>
+              <>Already have an account? <span onClick={handleModeSwitch} style={styles.link}>Log in</span></>
             )}
           </p>
         </div>
