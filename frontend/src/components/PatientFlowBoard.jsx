@@ -77,7 +77,7 @@ export default function PatientFlowBoard({
            </h3>
            
            {/* 🌟 FIX: Agar 'all' (Total) hai toh mobile pe '48px' (1 card), aur agar 'completed' (Done) click kiya hai toh '195px' (4 cards) */}
-           <div ref={visitedListRef} className="flow-scrollbar" style={{ overflowY: 'auto', maxHeight: isMobile ? (activeFilter === 'all' ? '48px' : '195px') : '138px', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+           <div ref={visitedListRef} className="flow-scrollbar" style={{ overflowY: 'auto', maxHeight: isMobile ? (activeFilter === 'all' ? '50px' : '195px') : '138px', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
              {visitedPatients.length === 0 ? (
                <div style={{ fontSize: '12px', color: '#94A3B8', fontStyle: 'italic' }}>No completed patients yet.</div>
              ) : (
@@ -133,7 +133,7 @@ export default function PatientFlowBoard({
            </h3>
            
            {/* 🌟 FIX: Agar 'all' (Total) hai toh mobile pe '48px' (1 card), aur agar 'remaining' (Wait) click kiya hai toh '195px' (4 cards) */}
-           <div className="flow-scrollbar" style={{ overflowY: 'auto', maxHeight: isMobile ? (activeFilter === 'all' ? '48px' : '195px') : '138px', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+           <div className="flow-scrollbar" style={{ overflowY: 'auto', maxHeight: isMobile ? (activeFilter === 'all' ? '50px' : '195px') : '138px', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
              {waitingPatients.length === 0 ? (
                <div style={{ fontSize: '12px', color: '#94A3B8', fontStyle: 'italic' }}>Queue is empty.</div>
              ) : (
