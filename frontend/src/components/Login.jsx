@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiLoader, FiActivity, FiUser, FiLock, FiEye, FiEyeOff, FiChevronRight, FiAlertCircle, FiShield } from 'react-icons/fi';
+import { FiLoader, FiActivity, FiUser, FiLock, FiEye, FiEyeOff, FiChevronRight, FiAlertCircle, FiShield, FiHome, FiAward, FiPhone, FiUserPlus } from 'react-icons/fi';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || `http://${window.location.hostname}:5000`;
 
@@ -7,35 +7,52 @@ export default function Login({ onLoginSuccess }) {
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState(''); 
   const [password, setPassword] = useState(''); 
+  
+  const [doctorName, setDoctorName] = useState(''); // 🌟 NAYA FIELD
+  const [clinicName, setClinicName] = useState('');
+  const [degree, setDegree] = useState('');
+  const [mobile, setMobile] = useState('');
+
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false); 
   const [focusedInput, setFocusedInput] = useState(null);
+  
   const [usernameError, setUsernameError] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  const [doctorNameError, setDoctorNameError] = useState('');
+  const [clinicNameError, setClinicNameError] = useState('');
+  const [degreeError, setDegreeError] = useState('');
+  const [mobileError, setMobileError] = useState('');
+
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
   const handleModeSwitch = () => {
     setIsLogin(!isLogin);
-    setMessage('');
-    setError('');
-    setUsernameError('');
-    setPasswordError('');
-    setUsername('');
-    setPassword('');
+    setMessage(''); setError('');
+    setUsernameError(''); setPasswordError(''); setDoctorNameError(''); setClinicNameError(''); setDegreeError(''); setMobileError('');
+    setUsername(''); setPassword(''); setDoctorName(''); setClinicName(''); setDegree(''); setMobile('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault(); 
     let isValid = true;
+    
     if (!username.trim()) { setUsernameError('Please fill out this field.'); isValid = false; } else { setUsernameError(''); }
     if (!password.trim()) { setPasswordError('Please fill out this field.'); isValid = false; } else { setPasswordError(''); }
+    
+    if (!isLogin) {
+      if (!doctorName.trim()) { setDoctorNameError('Please fill out this field.'); isValid = false; } else { setDoctorNameError(''); }
+      if (!clinicName.trim()) { setClinicNameError('Please fill out this field.'); isValid = false; } else { setClinicNameError(''); }
+      if (!degree.trim()) { setDegreeError('Please fill out this field.'); isValid = false; } else { setDegreeError(''); }
+      if (!mobile.trim()) { setMobileError('Please fill out this field.'); isValid = false; } else { setMobileError(''); }
+    }
+
     if (!isValid) return;
 
-    setMessage('');
-    setError('');
-    setLoading(true);
+    setMessage(''); setError(''); setLoading(true);
+    
     try {
       if (isLogin) {
         const res = await fetch(`${BACKEND_URL}/api/auth/login`, { 
@@ -46,11 +63,9 @@ export default function Login({ onLoginSuccess }) {
         const data = await res.json();
         if (res.ok) {
           if (rememberMe) {
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('username', data.username);
+            localStorage.setItem('token', data.token); localStorage.setItem('username', data.username);
           } else {
-            sessionStorage.setItem('token', data.token);
-            sessionStorage.setItem('username', data.username);
+            sessionStorage.setItem('token', data.token); sessionStorage.setItem('username', data.username);
           }
           if (onLoginSuccess) onLoginSuccess(data.username);
         } else {
@@ -60,7 +75,15 @@ export default function Login({ onLoginSuccess }) {
         const res = await fetch(`${BACKEND_URL}/api/auth/signup`, { 
           method: 'POST', 
           headers: { 'Content-Type': 'application/json' }, 
-          body: JSON.stringify({ username: username.trim(), password }) 
+          // 🌟 NAYA PAYLOAD
+          body: JSON.stringify({ 
+            username: username.trim(), 
+            password,
+            doctorName: doctorName.trim(),
+            clinicName: clinicName.trim(),
+            degree: degree.trim(),
+            mobile: mobile.trim()
+          }) 
         });
         const data = await res.json();
         if (res.ok) {
@@ -79,7 +102,8 @@ export default function Login({ onLoginSuccess }) {
 
   return (
     <div style={styles.checkinPageWrapper}>
-      <style>{`@keyframes spin { 100% { transform: rotate(360deg); } } .loading-spinner { animation: spin 1s linear infinite; }`}</style>
+      <style>{`@keyframes spin { 100% { transform: rotate(360deg); } } .loading-spinner { animation: spin 1s linear infinite; } .custom-scrollbar::-webkit-scrollbar { width: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }`}</style>
+      
       <div style={styles.checkinContainer}>
         <div style={styles.bgPlusLeft}>✚</div>
         <div style={styles.bgPlusRight}>✚</div>
@@ -108,75 +132,87 @@ export default function Login({ onLoginSuccess }) {
           {message && <div style={styles.successTextBanner}>{message}</div>}
           {error && <div style={styles.errorTextBanner}>{error}</div>}
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div>
-              <label style={styles.checkinLabel}>
-                <div style={styles.checkinLabelIcon}><FiUser size={12} color="#1A73E8"/></div>Username
-              </label>
-              <div style={{ ...styles.checkinInputWrapper, borderColor: usernameError ? '#EF4444' : (focusedInput === 'username' ? '#1A73E8' : '#E2E8F0'), boxShadow: focusedInput === 'username' ? '0 0 0 3px rgba(26,115,232,0.1)' : 'none' }}>
-                <input 
-                  type="text" 
-                  placeholder="Enter Username" 
-                  value={username} 
-                  onChange={(e) => {setUsername(e.target.value); setUsernameError('');}} 
-                  onFocus={() => setFocusedInput('username')} 
-                  onBlur={() => setFocusedInput(null)} 
-                  style={styles.checkinInput} 
-                />
-                <FiUser size={18} color="#94A3B8" />
+          <div className="custom-scrollbar" style={{ maxHeight: isLogin ? 'auto' : '50vh', overflowY: isLogin ? 'visible' : 'auto', paddingRight: isLogin ? '0' : '5px' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              
+              <div>
+                <label style={styles.checkinLabel}><div style={styles.checkinLabelIcon}><FiUser size={12} color="#1A73E8"/></div>Username</label>
+                <div style={{ ...styles.checkinInputWrapper, borderColor: usernameError ? '#EF4444' : (focusedInput === 'username' ? '#1A73E8' : '#E2E8F0'), boxShadow: focusedInput === 'username' ? '0 0 0 3px rgba(26,115,232,0.1)' : 'none' }}>
+                  <input type="text" placeholder="Enter Account ID" value={username} onChange={(e) => {setUsername(e.target.value); setUsernameError('');}} onFocus={() => setFocusedInput('username')} onBlur={() => setFocusedInput(null)} style={styles.checkinInput} />
+                  <FiUser size={18} color="#94A3B8" />
+                </div>
+                {usernameError && <div style={styles.checkinErrorText}><FiAlertCircle size={10}/> {usernameError}</div>}
               </div>
-              {usernameError && <div style={styles.checkinErrorText}><FiAlertCircle size={10}/> {usernameError}</div>}
-            </div>
 
-            <div>
-              <label style={styles.checkinLabel}>
-                <div style={styles.checkinLabelIcon}><FiLock size={12} color="#1A73E8"/></div>Password
-              </label>
-              <div style={{ ...styles.checkinInputWrapper, borderColor: passwordError ? '#EF4444' : (focusedInput === 'password' ? '#1A73E8' : '#E2E8F0'), boxShadow: focusedInput === 'password' ? '0 0 0 3px rgba(26,115,232,0.1)' : 'none' }}>
-                <input 
-                  type={showPassword ? "text" : "password"} 
-                  placeholder="Enter Password" 
-                  value={password} 
-                  onChange={(e) => {setPassword(e.target.value); setPasswordError('');}} 
-                  onFocus={() => setFocusedInput('password')} 
-                  onBlur={() => setFocusedInput(null)} 
-                  style={styles.checkinInput} 
-                />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
-                  {showPassword ? <FiEyeOff size={18} color="#94A3B8" /> : <FiEye size={18} color="#94A3B8" />}
-                </button>
+              <div>
+                <label style={styles.checkinLabel}><div style={styles.checkinLabelIcon}><FiLock size={12} color="#1A73E8"/></div>Password</label>
+                <div style={{ ...styles.checkinInputWrapper, borderColor: passwordError ? '#EF4444' : (focusedInput === 'password' ? '#1A73E8' : '#E2E8F0'), boxShadow: focusedInput === 'password' ? '0 0 0 3px rgba(26,115,232,0.1)' : 'none' }}>
+                  <input type={showPassword ? "text" : "password"} placeholder="Enter Password" value={password} onChange={(e) => {setPassword(e.target.value); setPasswordError('');}} onFocus={() => setFocusedInput('password')} onBlur={() => setFocusedInput(null)} style={styles.checkinInput} />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>{showPassword ? <FiEyeOff size={18} color="#94A3B8" /> : <FiEye size={18} color="#94A3B8" />}</button>
+                </div>
+                {passwordError && <div style={styles.checkinErrorText}><FiAlertCircle size={10}/> {passwordError}</div>}
               </div>
-              {passwordError && <div style={styles.checkinErrorText}><FiAlertCircle size={10}/> {passwordError}</div>}
-            </div>
 
-            {isLogin && (
-              <div style={styles.optionsRow}>
-                <label style={styles.checkboxLabel}>
-                  <input type="checkbox" style={styles.checkbox} checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
-                  Remember me
-                </label>
-              </div>
-            )}
+              {!isLogin && (
+                <>
+                  {/* 🌟 NAYA FIELD: Doctor Name */}
+                  <div>
+                    <label style={styles.checkinLabel}><div style={styles.checkinLabelIcon}><FiUserPlus size={12} color="#1A73E8"/></div>Doctor's Name</label>
+                    <div style={{ ...styles.checkinInputWrapper, borderColor: doctorNameError ? '#EF4444' : (focusedInput === 'docname' ? '#1A73E8' : '#E2E8F0'), boxShadow: focusedInput === 'docname' ? '0 0 0 3px rgba(26,115,232,0.1)' : 'none' }}>
+                      <input type="text" placeholder="e.g. Dr. Sahadat Ansari" value={doctorName} onChange={(e) => {setDoctorName(e.target.value); setDoctorNameError('');}} onFocus={() => setFocusedInput('docname')} onBlur={() => setFocusedInput(null)} style={styles.checkinInput} />
+                      <FiUserPlus size={18} color="#94A3B8" />
+                    </div>
+                    {doctorNameError && <div style={styles.checkinErrorText}><FiAlertCircle size={10}/> {doctorNameError}</div>}
+                  </div>
 
-            <button type="submit" disabled={loading} style={{ ...styles.checkinSubmitBtn, justifyContent: loading ? 'center' : 'flex-start', opacity: loading ? 0.85 : 1 }}>
-              {loading ? (
-                <><FiLoader size={18} className="loading-spinner" /><span>Processing...</span></>
-              ) : (
-                <><FiUser size={16} /><span>{isLogin ? 'Login to Dashboard' : 'Create Account'}</span><div style={{ flexGrow: 1 }}></div><FiChevronRight size={18} /></>
+                  <div>
+                    <label style={styles.checkinLabel}><div style={styles.checkinLabelIcon}><FiHome size={12} color="#1A73E8"/></div>Clinic Name</label>
+                    <div style={{ ...styles.checkinInputWrapper, borderColor: clinicNameError ? '#EF4444' : (focusedInput === 'clinic' ? '#1A73E8' : '#E2E8F0'), boxShadow: focusedInput === 'clinic' ? '0 0 0 3px rgba(26,115,232,0.1)' : 'none' }}>
+                      <input type="text" placeholder="e.g. Life Care Clinic" value={clinicName} onChange={(e) => {setClinicName(e.target.value); setClinicNameError('');}} onFocus={() => setFocusedInput('clinic')} onBlur={() => setFocusedInput(null)} style={styles.checkinInput} />
+                      <FiHome size={18} color="#94A3B8" />
+                    </div>
+                    {clinicNameError && <div style={styles.checkinErrorText}><FiAlertCircle size={10}/> {clinicNameError}</div>}
+                  </div>
+
+                  <div>
+                    <label style={styles.checkinLabel}><div style={styles.checkinLabelIcon}><FiAward size={12} color="#1A73E8"/></div>Degree</label>
+                    <div style={{ ...styles.checkinInputWrapper, borderColor: degreeError ? '#EF4444' : (focusedInput === 'degree' ? '#1A73E8' : '#E2E8F0'), boxShadow: focusedInput === 'degree' ? '0 0 0 3px rgba(26,115,232,0.1)' : 'none' }}>
+                      <input type="text" placeholder="e.g. MBBS, MD" value={degree} onChange={(e) => {setDegree(e.target.value); setDegreeError('');}} onFocus={() => setFocusedInput('degree')} onBlur={() => setFocusedInput(null)} style={styles.checkinInput} />
+                      <FiAward size={18} color="#94A3B8" />
+                    </div>
+                    {degreeError && <div style={styles.checkinErrorText}><FiAlertCircle size={10}/> {degreeError}</div>}
+                  </div>
+
+                  <div>
+                    <label style={styles.checkinLabel}><div style={styles.checkinLabelIcon}><FiPhone size={12} color="#1A73E8"/></div>Mobile</label>
+                    <div style={{ ...styles.checkinInputWrapper, borderColor: mobileError ? '#EF4444' : (focusedInput === 'mobile' ? '#1A73E8' : '#E2E8F0'), boxShadow: focusedInput === 'mobile' ? '0 0 0 3px rgba(26,115,232,0.1)' : 'none' }}>
+                      <input type="tel" maxLength="10" placeholder="e.g. 9876543210" value={mobile} onChange={(e) => {setMobile(e.target.value.replace(/\D/g, '')); setMobileError('');}} onFocus={() => setFocusedInput('mobile')} onBlur={() => setFocusedInput(null)} style={styles.checkinInput} />
+                      <FiPhone size={18} color="#94A3B8" />
+                    </div>
+                    {mobileError && <div style={styles.checkinErrorText}><FiAlertCircle size={10}/> {mobileError}</div>}
+                  </div>
+                </>
               )}
-            </button>
-          </form>
 
-          <div style={styles.checkinFooterText}>
-            <FiShield size={12} color="#2563EB" /> Your Health, Our Priority
+              {isLogin && (
+                <div style={styles.optionsRow}>
+                  <label style={styles.checkboxLabel}><input type="checkbox" style={styles.checkbox} checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} /> Remember me</label>
+                </div>
+              )}
+
+              <button type="submit" disabled={loading} style={{ ...styles.checkinSubmitBtn, justifyContent: loading ? 'center' : 'flex-start', opacity: loading ? 0.85 : 1 }}>
+                {loading ? (
+                  <><FiLoader size={18} className="loading-spinner" /><span>Processing...</span></>
+                ) : (
+                  <><FiUser size={16} /><span>{isLogin ? 'Login to Dashboard' : 'Create Account'}</span><div style={{ flexGrow: 1 }}></div><FiChevronRight size={18} /></>
+                )}
+              </button>
+            </form>
           </div>
 
+          <div style={styles.checkinFooterText}><FiShield size={12} color="#2563EB" /> Your Health, Our Priority</div>
           <p style={styles.toggleText}>
-            {isLogin ? (
-              <>Need a new account? <span onClick={handleModeSwitch} style={styles.link}>Sign up</span></>
-            ) : (
-              <>Already have an account? <span onClick={handleModeSwitch} style={styles.link}>Log in</span></>
-            )}
+            {isLogin ? <>Need a new account? <span onClick={handleModeSwitch} style={styles.link}>Sign up</span></> : <>Already have an account? <span onClick={handleModeSwitch} style={styles.link}>Log in</span></>}
           </p>
         </div>
       </div>
@@ -194,7 +230,7 @@ const styles = {
   checkinLogoCircle: { backgroundColor: '#FFFFFF', width: '60px', height: '60px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '10px', boxShadow: '0 10px 25px rgba(37,99,235,0.15)', position: 'relative' },
   clipboardBody: { backgroundColor: '#2563EB', width: '26px', height: '34px', borderRadius: '5px', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '6px', gap: '3px', position: 'relative' },
   clipboardTop: { position: 'absolute', top: '-4px', backgroundColor: '#93C5FD', width: '12px', height: '6px', borderRadius: '2px' },
-  clipboardCrossBox: { backgroundColor: '#FFFFFF', width: '13px', height: '13px', borderRadius: '3px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#2563EB', fontSize: '10px', fontWeight: '900', marginBottom: '1px' },
+  clipboardCrossBox: { backgroundColor: '#FFFFFF', width: '13px', height: '13px', borderRadius: '3px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#2563EB', fontSize: '10px', fontWeight: '900', margin: '0 0 1px 0' },
   clipboardLine: { backgroundColor: '#FFFFFF', width: '15px', height: '2px', borderRadius: '2px', opacity: 0.9 },
   clipboardLineShort: { backgroundColor: '#FFFFFF', width: '10px', height: '2px', borderRadius: '2px', opacity: 0.9, alignSelf: 'flex-start', marginLeft: '6px' },
   checkinTitle: { fontSize: '22px', fontWeight: '800', color: '#1E293B', margin: '0 0 4px 0', letterSpacing: '-0.5px' },

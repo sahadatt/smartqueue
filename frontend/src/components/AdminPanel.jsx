@@ -15,7 +15,15 @@ const maskMobileNumber = (mobile) => {
   return mobile; 
 };
 
-export default function AdminPanel({ currentLiveToken, totalTokensDistributed, patients, username, onLogout, socket }) {
+export default function AdminPanel({ currentLiveToken, totalTokensDistributed, patients, username, onLogout, socket, doctorDetails, clinicStatus = 'not-started' }) {
+  
+  const profileInfo = {
+    clinicName: doctorDetails?.clinicName || "LIFE CARE",
+    doctorName: doctorDetails?.doctorName || username || "Dr. Sahadat Ansari",
+    degree: doctorDetails?.degree || "MBBS, MD",
+    mobile: doctorDetails?.mobile || "+91 0000000000"
+  };
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -24,7 +32,15 @@ export default function AdminPanel({ currentLiveToken, totalTokensDistributed, p
   const [generatedParchi, setGeneratedParchi] = useState(null);
   const [activeFilter, setActiveFilter] = useState('all');
   
+  const [tokenReceiptModal, setTokenReceiptModal] = useState({ isOpen: false, token: null, name: '', mobile: '', date: '' });
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  const [localStatus, setLocalStatus] = useState(clinicStatus);
+  const [pauseModalOpen, setPauseModalOpen] = useState(false);
+  
+  // Start Session Password Modal
+  const [startModalOpen, setStartModalOpen] = useState(false);
+  const [startPassword, setStartPassword] = useState('');
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -36,6 +52,42 @@ export default function AdminPanel({ currentLiveToken, totalTokensDistributed, p
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    setLocalStatus(clinicStatus);
+  }, [clinicStatus]);
+
+  useEffect(() => {
+    if (!socket) return;
+    socket.on('clinic-status-changed', (status) => setLocalStatus(status));
+    
+    socket.on('reset-status-response', (data) => {
+      if (data.success) {
+        setAlertModal({ isOpen: true, title: 'Success', message: data.message || 'System Reset Successful!', icon: '✅' });
+        setIsQueueFinished(false);
+      } else {
+        setAlertModal({ isOpen: true, title: 'Error', message: data.message || 'Error occurred.', icon: '🚨' });
+      }
+    });
+
+    return () => {
+      socket.off('clinic-status-changed');
+      socket.off('reset-status-response');
+    };
+  }, [socket]);
+
+  const handleStatusChange = (newStatus) => {
+    setLocalStatus(newStatus);
+    if (socket) socket.emit('update-clinic-status', newStatus);
+  };
+
+  const handleStartSessionSubmit = (e) => {
+    e.preventDefault();
+    if (!startPassword || startPassword.trim() === "") return;
+    handleStatusChange('active');
+    setStartModalOpen(false);
+    setStartPassword('');
+  };
 
   const getGreeting = () => {
     const hour = currentTime.getHours();
@@ -81,21 +133,7 @@ export default function AdminPanel({ currentLiveToken, totalTokensDistributed, p
     if (totalTokensDistributed > currentLiveToken) setIsQueueFinished(false);
   }, [totalTokensDistributed, currentLiveToken]);
 
-  useEffect(() => {
-    if (!socket) return;
-    socket.on('reset-status-response', (data) => {
-      if (data.success) {
-        setAlertModal({ isOpen: true, title: 'Success', message: data.message || 'System Reset Successful!', icon: '✅' });
-        setIsQueueFinished(false);
-      } else {
-        setAlertModal({ isOpen: true, title: 'Error', message: data.message || 'Error occurred.', icon: '🚨' });
-      }
-    });
-    return () => socket.off('reset-status-response');
-  }, [socket]);
-
   const triggerDeleteModal = (id, tokenNumber) => setDeleteModal({ isOpen: true, id, tokenNumber });
-  
   const executeAdminDelete = () => { 
     const targetPatient = patients.find(p => String(p._id) === String(deleteModal.id) || Number(p.tokenNumber) === Number(deleteModal.tokenNumber));
     const deleteTimestamp = new Date();
@@ -113,7 +151,6 @@ export default function AdminPanel({ currentLiveToken, totalTokensDistributed, p
   };
   
   const triggerEditModal = (id, name, tokenNumber, mobileNumber) => setEditModal({ isOpen: true, id, name, tokenNumber, mobileNumber: mobileNumber || '' });
-  
   const executeAdminEdit = (e) => { 
     e.preventDefault(); 
     socket.emit('admin-edit-patient', { 
@@ -138,6 +175,7 @@ export default function AdminPanel({ currentLiveToken, totalTokensDistributed, p
     }
     socket.emit('reset-entire-queue', { username, password: resetModal.password.trim() });
     setResetModal({ isOpen: false, password: '' });
+    handleStatusChange('not-started'); 
   };
 
   const executeClearHistory = (e) => {
@@ -154,16 +192,29 @@ export default function AdminPanel({ currentLiveToken, totalTokensDistributed, p
     try {
       const res = await fetch(`${BACKEND_URL}/api/auth/patient-checkin`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ patientName: walkInName, mobileNumber: walkInMobile.trim() || "Walk-In Parchi" }) });
       const data = await res.json();
-      if (res.ok) { setGeneratedParchi({ token: data.myToken, name: data.patientName }); setWalkInName(''); setWalkInMobile(''); }
+      if (res.ok) { 
+        setTokenReceiptModal({
+          isOpen: true,
+          token: data.myToken,
+          name: data.patientName,
+          mobile: walkInMobile.trim() || "Walk-In",
+          date: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })
+        });
+        setWalkInName(''); 
+        setWalkInMobile(''); 
+        setGeneratedParchi(null);
+      }
     } catch (err) {}
   };
 
   const handleNextToken = () => {
+    if (localStatus !== 'active') return;
     if (currentLiveToken >= totalTokensDistributed && totalTokensDistributed > 0) setShowFinishModal(true);
     else if (socket) socket.emit('next-token');
   };
 
   const handlePrevToken = () => {
+    if (localStatus !== 'active') return;
     setIsQueueFinished(false);
     if (socket) socket.emit('prev-token');
   };
@@ -173,36 +224,75 @@ export default function AdminPanel({ currentLiveToken, totalTokensDistributed, p
     setIsQueueFinished(true);
   };
 
+  const sidebarSocketProxy = {
+    emit: (eventName, data) => {
+      if (eventName === 'next-patient') {
+        handleNextToken(); 
+      } else if (socket) {
+        socket.emit(eventName, data);
+      }
+    }
+  };
+
+  const tokensAhead = tokenReceiptModal.token > currentLiveToken ? tokenReceiptModal.token - currentLiveToken : 0;
+  const estimatedMinutes = tokensAhead * 5;
+  const arrivalTimeObj = new Date(Date.now() + estimatedMinutes * 60000);
+  const formattedArrivalTime = arrivalTimeObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
   return (
     <div className="admin-layout" style={{ height: '100dvh', overflow: 'hidden', display: 'flex', width: '100%' }}>
+      
+      <style>{`
+        .ticket-wrapper { position: relative; background: #FFFFFF; width: 100%; border-radius: 10px; overflow: hidden; box-shadow: 0 5px 15px -5px rgba(0,0,0,0.1); }
+        
+        .glow-input {
+          width: 100%;
+          padding: 14px 16px;
+          border-radius: 10px;
+          border: 1px solid #CBD5E1;
+          outline: none;
+          font-size: 14px;
+          background-color: #F8FAFC;
+          transition: all 0.3s ease;
+          box-sizing: border-box;
+        }
+        .glow-input:focus {
+          border-color: #3B82F6;
+          background-color: #FFFFFF;
+          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15), 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        @media print {
+          body * { visibility: hidden !important; }
+          #print-section, #print-section * { visibility: visible !important; }
+          #print-section { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: 80mm; margin: 0; padding: 0; box-shadow: none !important; }
+          .hide-on-print { display: none !important; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+      `}</style>
+
       <AdminSidebar 
-        isSidebarOpen={isSidebarOpen} 
-        setIsSidebarOpen={setIsSidebarOpen} 
-        isNextDisabled={isNextDisabled} 
-        socket={socket} 
-        setResetModal={setResetModal}
-        totalTokensToday={totalTokensDistributed}
-        completedCount={visitedPatients.length}
-        inProgressCount={currentConsultingPatient && !isQueueFinished ? 1 : 0}
-        remainingCount={waitingPatients.length}
-        deletedCount={deletedCount}
-        activeFilter={activeFilter}
-        setActiveFilter={setActiveFilter}
+        isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} 
+        isNextDisabled={isNextDisabled} socket={sidebarSocketProxy} setResetModal={setResetModal}
+        totalTokensToday={totalTokensDistributed} completedCount={visitedPatients.length}
+        inProgressCount={currentConsultingPatient && !isQueueFinished ? 1 : 0} remainingCount={waitingPatients.length}
+        deletedCount={deletedCount} activeFilter={activeFilter} setActiveFilter={setActiveFilter}
+        localStatus={localStatus} handleStatusChange={handleStatusChange} setPauseModalOpen={setPauseModalOpen}
+        setStartModalOpen={setStartModalOpen}
       />
 
-      <main className="admin-main" style={{ flex: 1, overflowY: 'auto', height: '100dvh' }}>
+      <main className="admin-main" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100dvh', overflow: 'hidden' }}>
+        
         <AdminNavbar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} username={username} onLogout={onLogout} isProfileMenuOpen={isProfileMenuOpen} setIsProfileMenuOpen={setIsProfileMenuOpen} />
 
-        <div className="dashboard-content" style={{ paddingBottom: isMobile ? '20px' : '0' }}>
+        <div className="dashboard-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: isMobile ? '8px 16px' : '20px', paddingBottom: isMobile ? '10px' : '20px', overflow: 'hidden', boxSizing: 'border-box', width: '100%' }}>
           
           {!isMobile && (
-            <>
+            <div style={{ flexShrink: 0 }}>
               <div className="page-header" style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '15px' }}>
                 <h1 style={{ margin: 0, fontSize: '26px', color: '#0F172A', fontWeight: '800', letterSpacing: '-0.5px' }}>Dashboard</h1>
                 <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                  <span style={{ margin: 0, fontWeight: '800', fontSize: '15px', background: 'linear-gradient(90deg, #2563EB, #8B5CF6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '0.2px' }}>
-                    {getGreeting()}!
-                  </span>
+                  <span style={{ margin: 0, fontWeight: '800', fontSize: '15px', background: 'linear-gradient(90deg, #2563EB, #8B5CF6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '0.2px' }}>{getGreeting()}!</span>
                   <span style={{ fontSize: '12px', background: 'linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)', padding: '6px 16px', borderRadius: '24px', color: '#475569', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '8px', border: '1px solid #E2E8F0', boxShadow: '0 2px 6px rgba(0,0,0,0.02)' }}>
                       <span style={{ color: '#3B82F6', fontSize: '13px' }}>⏱️</span> {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
                       <span style={{ color: '#CBD5E1', margin: '0 2px' }}>|</span> 
@@ -210,14 +300,23 @@ export default function AdminPanel({ currentLiveToken, totalTokensDistributed, p
                   </span>
                 </div>
               </div>
-              
               <StatsGrid totalTokensToday={totalTokensDistributed} completedCount={visitedPatients.length} inProgressCount={currentConsultingPatient && !isQueueFinished ? 1 : 0} remainingCount={waitingPatients.length} deletedCount={deletedCount} activeFilter={activeFilter} setActiveFilter={setActiveFilter} />
-            </>
+            </div>
           )}
 
-          <div className="workspace-grid" style={{ display: isMobile ? 'flex' : 'grid', gridTemplateColumns: isMobile ? 'none' : '1fr 1fr', flexDirection: isMobile ? 'column' : '', gap: '15px', marginTop: isMobile ? '10px' : '0' }}>
+          <div className="workspace-grid" style={{ display: isMobile ? 'flex' : 'grid', gridTemplateColumns: isMobile ? 'none' : '1fr 1fr', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? '10px' : '15px', marginTop: isMobile ? '4px' : '0', flex: 1, overflow: 'hidden', width: '100%', boxSizing: 'border-box' }}>
             
-            <div className="left-stack" style={{ order: isMobile ? 2 : 1 }}>
+            {isMobile && (
+              <div style={{ order: 1, flexShrink: 0, width: '100%' }}>
+                <ManualParchi walkInName={walkInName} setWalkInName={setWalkInName} walkInMobile={walkInMobile} setWalkInMobile={setWalkInMobile} handleManualCheckin={handleManualCheckin} generatedParchi={generatedParchi} />
+              </div>
+            )}
+
+            <div style={{ order: 2, width: '100%', display: 'flex', flexDirection: 'column', flex: isMobile ? '0 1 auto' : 'auto', height: isMobile ? 'auto' : 'calc(100dvh - 160px)', minHeight: 0, overflow: 'hidden' }}>
+              <PatientFlowBoard isMobile={isMobile} activeFilter={activeFilter} visitedPatients={visitedPatients} currentConsultingPatient={currentConsultingPatient} waitingPatients={waitingPatients} deletedPatients={deletedPatients} triggerEditModal={triggerEditModal} triggerDeleteModal={triggerDeleteModal} maskMobileNumber={maskMobileNumber} onClearHistory={() => setClearHistoryModal({ isOpen: true, password: '' })} />
+            </div>
+
+            <div className="left-stack" style={{ order: isMobile ? 3 : 1, display: 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '15px', flexShrink: 0, width: '100%' }}>
               {isQueueFinished ? (
                 <div className="glass-card pulse-anim" style={{ padding: '40px 20px', borderRadius: '20px', backgroundColor: '#fff', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', textAlign: 'center', border: '3px solid #10B981' }}>
                   <style>{`@keyframes pop { 0% {transform: scale(0.8)} 50% {transform: scale(1.1)} 100% {transform: scale(1)} }`}</style>
@@ -227,85 +326,113 @@ export default function AdminPanel({ currentLiveToken, totalTokensDistributed, p
                   <button onClick={() => setIsQueueFinished(false)} style={{ marginTop: '20px', padding: '10px 20px', borderRadius: '8px', border: 'none', backgroundColor: '#F1F5F9', color: '#475569', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>View Counter Again</button>
                 </div>
               ) : (
-                <LiveCounter currentLiveToken={currentLiveToken} socket={socket} isNextDisabled={isNextDisabled} onNext={handleNextToken} onPrevious={handlePrevToken} />
+                <LiveCounter 
+                  currentLiveToken={currentLiveToken} 
+                  socket={socket} 
+                  isNextDisabled={isNextDisabled || localStatus !== 'active'} 
+                  isPrevDisabled={localStatus !== 'active'}
+                  onNext={handleNextToken} 
+                  onPrevious={handlePrevToken} 
+                />
               )}
 
               {!isMobile && (
                 <ManualParchi walkInName={walkInName} setWalkInName={setWalkInName} walkInMobile={walkInMobile} setWalkInMobile={setWalkInMobile} handleManualCheckin={handleManualCheckin} generatedParchi={generatedParchi} />
               )}
             </div>
-
-            <div style={{ 
-              order: isMobile ? 1 : 2, 
-              width: '100%', 
-              height: isMobile ? '40dvh' : 'calc(100dvh - 160px)', 
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-              <PatientFlowBoard
-                isMobile={isMobile}
-                activeFilter={activeFilter} 
-                visitedPatients={visitedPatients} 
-                currentConsultingPatient={currentConsultingPatient} 
-                waitingPatients={waitingPatients} 
-                deletedPatients={deletedPatients}
-                triggerEditModal={triggerEditModal} 
-                triggerDeleteModal={triggerDeleteModal} 
-                maskMobileNumber={maskMobileNumber}
-                onClearHistory={() => setClearHistoryModal({ isOpen: true, password: '' })}
-              />
-            </div>
           </div>
         </div>
       </main>
 
-      {/* MODALS */}
-      <BeautifulModal isOpen={deleteModal.isOpen} onClose={() => setDeleteModal({ isOpen: false, id: '', tokenNumber: '' })} title="Delete Patient?" icon="🗑️">
-        <p style={{ margin: '0 0 20px 0', fontSize: '15px' }}>Are you sure you want to permanently delete Token <b>#{deleteModal.tokenNumber}</b>?</p>
-        <button onClick={executeAdminDelete} style={{backgroundColor: '#DC3545', color: '#fff', border:'none', padding:'10px', borderRadius:'8px', cursor:'pointer', width: '100%', fontWeight: 'bold'}}>Delete</button>
+      {/* GLOW EFFECT PASSWORD MODAL FOR STARTING SESSION */}
+      <BeautifulModal isOpen={startModalOpen} onClose={() => { setStartModalOpen(false); setStartPassword(''); }} title="Start Session" icon="▶️">
+        <form onSubmit={handleStartSessionSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', textAlign: 'left' }}>
+          <p style={{ margin: 0, fontSize: '14px', color: '#475569' }}>Please enter your password to start the session:</p>
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '6px' }}>Password</label>
+            <input 
+              type="password" 
+              value={startPassword} 
+              onChange={(e) => setStartPassword(e.target.value)} 
+              className="glow-input"
+              placeholder="Enter your security password..." 
+              required 
+            />
+          </div>
+          <button type="submit" style={{ padding: '14px', backgroundColor: '#10B981', color: 'white', border: 'none', borderRadius: '10px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '6px', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)', transition: 'all 0.2s' }}>
+            Start Session Now
+          </button>
+        </form>
       </BeautifulModal>
 
+      <BeautifulModal isOpen={pauseModalOpen} onClose={() => setPauseModalOpen(false)} title="Pause Session" icon="⏸️">
+        <p style={{ margin: '0 0 20px 0', fontSize: '14px', color: '#475569', textAlign: 'center' }}>
+          Select the reason for pausing the queue. Patients will see this status on their phones.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <button onClick={() => { handleStatusChange('lunch'); setPauseModalOpen(false); }} style={{ padding: '14px', border: '1px solid #FDE68A', borderRadius: '10px', backgroundColor: '#FEF3C7', color: '#D97706', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer' }}>🍔 Doctor is on Lunch Break</button>
+          <button onClick={() => { handleStatusChange('meeting'); setPauseModalOpen(false); }} style={{ padding: '14px', border: '1px solid #BFDBFE', borderRadius: '10px', backgroundColor: '#E0E7FF', color: '#2563EB', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer' }}>👥 Doctor is in a Meeting</button>
+          <button onClick={() => { handleStatusChange('busy'); setPauseModalOpen(false); }} style={{ padding: '14px', border: '1px solid #FECACA', borderRadius: '10px', backgroundColor: '#FEE2E2', color: '#DC2626', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer' }}>⏳ Doctor is Busy / Paused</button>
+          <button onClick={() => setPauseModalOpen(false)} style={{ padding: '12px', border: 'none', backgroundColor: 'transparent', color: '#64748B', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', marginTop: '5px' }}>Cancel</button>
+        </div>
+      </BeautifulModal>
+
+      <BeautifulModal 
+        isOpen={tokenReceiptModal.isOpen} 
+        onClose={() => setTokenReceiptModal({ isOpen: false, token: null, name: '', mobile: '', date: '' })} 
+        title="Success" 
+        icon="✅" 
+      >
+        <div style={{ backgroundColor: '#E2E8F0', padding: '10px', borderRadius: '8px', margin: '0 auto 10px auto' }}>
+          <div id="print-section" className="ticket-wrapper" style={{ maxWidth: '300px', margin: '0 auto' }}>
+            <div style={{ backgroundColor: '#10B981', color: 'white', padding: '12px 10px', textAlign: 'center' }}>
+              <h2 style={{ margin: '0', fontSize: '18px', fontWeight: '900', letterSpacing: '1px', textTransform: 'uppercase' }}>{profileInfo.clinicName}</h2>
+              <p style={{ margin: '2px 0 0 0', fontSize: '11px', fontWeight: '500', opacity: '0.9' }}>Token Receipt</p>
+            </div>
+            <div style={{ padding: '15px 10px', textAlign: 'center', backgroundColor: '#FFFFFF' }}>
+              <div style={{ fontSize: '11px', color: '#64748B', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>Token Number</div>
+              <div style={{ fontSize: '55px', fontWeight: '900', color: '#0F172A', lineHeight: '1' }}>#{tokenReceiptModal.token}</div>
+            </div>
+            <div style={{ position: 'relative', height: '20px', display: 'flex', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
+              <div style={{ position: 'absolute', left: '-10px', width: '20px', height: '20px', backgroundColor: '#E2E8F0', borderRadius: '50%', zIndex: 2 }}></div>
+              <div style={{ flex: 1, borderBottom: '2px dashed #CBD5E1', margin: '0 20px' }}></div>
+              <div style={{ position: 'absolute', right: '-10px', width: '20px', height: '20px', backgroundColor: '#E2E8F0', borderRadius: '50%', zIndex: 2 }}></div>
+            </div>
+            <div style={{ padding: '10px 15px 15px 15px', display: 'flex', flexDirection: 'column', gap: '8px', background: '#FFFFFF' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', color: '#64748B', fontWeight: '600' }}>Patient Name:</span>
+                <span style={{ fontSize: '13px', color: '#0F172A', fontWeight: '800' }}>{tokenReceiptModal.name}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '4px' }}>
+                <span style={{ fontSize: '12px', color: '#64748B', fontWeight: '600' }}>Mobile No:</span>
+                <span style={{ fontSize: '13px', color: '#0F172A', fontWeight: '800' }}>{tokenReceiptModal.mobile}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '8px', borderBottom: '1px solid #F1F5F9' }}>
+                <span style={{ fontSize: '12px', color: '#64748B', fontWeight: '600' }}>Expected Time:</span>
+                <span style={{ fontSize: '13px', color: '#059669', fontWeight: '800' }}>
+                  {tokensAhead === 0 ? 'Your Turn Now!' : `${formattedArrivalTime} (${tokensAhead} ahead)`}
+                </span>
+              </div>
+              <div style={{ textAlign: 'center', marginTop: '2px' }}>
+                <h4 style={{ margin: '0 0 2px 0', color: '#0F172A', fontSize: '14px', fontWeight: '800' }}>{profileInfo.doctorName}</h4>
+                <p style={{ margin: '0 0 4px 0', color: '#64748B', fontSize: '11px', fontWeight: '600' }}>{profileInfo.degree} | Mob: {profileInfo.mobile}</p>
+                <div style={{ fontSize: '10px', color: '#94A3B8', fontWeight: '600' }}>📅 {tokenReceiptModal.date}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="hide-on-print" style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={() => window.print()} style={{ flex: 1, padding: '10px', border: '2px solid #10B981', borderRadius: '8px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', backgroundColor: 'transparent', color: '#10B981', transition: 'all 0.2s' }}>🖨️ Print</button>
+          <button onClick={() => setTokenReceiptModal({ isOpen: false, token: null, name: '', mobile: '', date: '' })} style={{ flex: 1, padding: '10px', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', backgroundColor: '#10B981', color: '#FFFFFF', boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)' }}>Done</button>
+        </div>
+      </BeautifulModal>
+
+      <BeautifulModal isOpen={deleteModal.isOpen} onClose={() => setDeleteModal({ isOpen: false, id: '', tokenNumber: '' })} title="Delete Patient?" icon="🗑️"><p style={{ margin: '0 0 20px 0', fontSize: '15px' }}>Are you sure you want to permanently delete Token <b>#{deleteModal.tokenNumber}</b>?</p><button onClick={executeAdminDelete} style={{backgroundColor: '#DC3545', color: '#fff', border:'none', padding:'10px', borderRadius:'8px', cursor:'pointer', width: '100%', fontWeight: 'bold'}}>Delete</button></BeautifulModal>
       <ResetQueueModal isOpen={resetModal.isOpen} onClose={() => setResetModal({ isOpen: false, password: '' })} password={resetModal.password} setPassword={(val) => setResetModal({ ...resetModal, password: val })} onConfirm={executeSystemReset} />
-
-      <BeautifulModal isOpen={clearHistoryModal.isOpen} onClose={() => setClearHistoryModal({ isOpen: false, password: '' })} title="Clear Deleted History" icon="🔒">
-        <form onSubmit={executeClearHistory} style={{ display: 'flex', flexDirection: 'column', gap: '16px', textAlign: 'left' }}>
-          <p style={{ margin: 0, fontSize: '14px', color: '#475569' }}>Please enter your password to permanently clear the deleted history:</p>
-          <div>
-            <label style={{ fontSize: '13px', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>Password</label>
-            <input type="password" value={clearHistoryModal.password} onChange={(e) => setClearHistoryModal({...clearHistoryModal, password: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #CBD5E1', outline: 'none', boxSizing: 'border-box' }} placeholder="Enter password" required />
-          </div>
-          <button type="submit" style={{ padding: '14px', backgroundColor: '#DC3545', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '8px' }}>Clear History</button>
-        </form>
-      </BeautifulModal>
-
-      <BeautifulModal isOpen={showFinishModal} onClose={() => setShowFinishModal(false)} title="Consultation Complete" icon="🏁">
-        <p style={{ margin: '0 0 20px 0', fontSize: '15px', textAlign: 'center', color: '#475569', fontWeight: '500' }}>This was your last token. Has the visit for all patients been completed?</p>
-        <button onClick={handleConfirmFinish} style={{ width: '100%', padding: '14px', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', backgroundColor: '#10B981', color: '#FFFFFF' }}>OK, Mark as Visited</button>
-      </BeautifulModal>
-
-      <BeautifulModal isOpen={editModal.isOpen} onClose={() => setEditModal({ isOpen: false, id: '', name: '', tokenNumber: '', mobileNumber: '' })} title="Edit Patient" icon="✍️">
-        <form onSubmit={executeAdminEdit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', textAlign: 'left' }}>
-          <div>
-            <label style={{ fontSize: '13px', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>Token Number</label>
-            <input type="number" value={editModal.tokenNumber} onChange={(e) => setEditModal({...editModal, tokenNumber: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #CBD5E1', outline: 'none', boxSizing: 'border-box' }} required />
-          </div>
-          <div>
-            <label style={{ fontSize: '13px', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>Name</label>
-            <input type="text" value={editModal.name} onChange={(e) => setEditModal({...editModal, name: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #CBD5E1', outline: 'none', boxSizing: 'border-box' }} required />
-          </div>
-          <div>
-            <label style={{ fontSize: '13px', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>Mobile</label>
-            <input type="text" value={editModal.mobileNumber} onChange={(e) => setEditModal({...editModal, mobileNumber: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #CBD5E1', outline: 'none', boxSizing: 'border-box' }} />
-          </div>
-          <button type="submit" style={{ padding: '14px', backgroundColor: '#3B82F6', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '8px' }}>Save Changes</button>
-        </form>
-      </BeautifulModal>
-
-      <BeautifulModal isOpen={alertModal.isOpen} onClose={() => setAlertModal({ isOpen: false, title: '', message: '', icon: '' })} title={alertModal.title} icon={alertModal.icon}>
-        <p style={{ margin: '0 0 20px 0', fontSize: '15px', textAlign: 'center', color: '#475569', fontWeight: '500' }}>{alertModal.message}</p>
-        <button onClick={() => setAlertModal({ isOpen: false, title: '', message: '', icon: '' })} style={{ width: '100%', padding: '14px', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', backgroundColor: alertModal.title === 'Success' ? '#10B981' : '#EF4444', color: '#FFFFFF' }}>OK</button>
-      </BeautifulModal>
-
+      <BeautifulModal isOpen={clearHistoryModal.isOpen} onClose={() => setClearHistoryModal({ isOpen: false, password: '' })} title="Clear Deleted History" icon="🔒"><form onSubmit={executeClearHistory} style={{ display: 'flex', flexDirection: 'column', gap: '16px', textAlign: 'left' }}><p style={{ margin: 0, fontSize: '14px', color: '#475569' }}>Please enter your password to permanently clear the deleted history:</p><div><label style={{ fontSize: '13px', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>Password</label><input type="password" value={clearHistoryModal.password} onChange={(e) => setClearHistoryModal({...clearHistoryModal, password: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #CBD5E1', outline: 'none', boxSizing: 'border-box' }} placeholder="Enter password" required /></div><button type="submit" style={{ padding: '14px', backgroundColor: '#DC3545', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '8px' }}>Clear History</button></form></BeautifulModal>
+      <BeautifulModal isOpen={showFinishModal} onClose={() => setShowFinishModal(false)} title="Consultation Complete" icon="🏁"><p style={{ margin: '0 0 20px 0', fontSize: '15px', textAlign: 'center', color: '#475569', fontWeight: '500' }}>This was your last token. Has the visit for all patients been completed?</p><button onClick={handleConfirmFinish} style={{ width: '100%', padding: '14px', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', backgroundColor: '#10B981', color: '#FFFFFF' }}>OK, Mark as Visited</button></BeautifulModal>
+      <BeautifulModal isOpen={editModal.isOpen} onClose={() => setEditModal({ isOpen: false, id: '', name: '', tokenNumber: '', mobileNumber: '' })} title="Edit Patient" icon="✍️"><form onSubmit={executeAdminEdit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', textAlign: 'left' }}><div><label style={{ fontSize: '13px', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>Token Number</label><input type="number" value={editModal.tokenNumber} onChange={(e) => setEditModal({...editModal, tokenNumber: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #CBD5E1', outline: 'none', boxSizing: 'border-box' }} required /></div><div><label style={{ fontSize: '13px', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>Name</label><input type="text" value={editModal.name} onChange={(e) => setEditModal({...editModal, name: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #CBD5E1', outline: 'none', boxSizing: 'border-box' }} required /></div><div><label style={{ fontSize: '13px', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>Mobile</label><input type="text" value={editModal.mobileNumber} onChange={(e) => setEditModal({...editModal, mobileNumber: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #CBD5E1', outline: 'none', boxSizing: 'border-box' }} /></div><button type="submit" style={{ padding: '14px', backgroundColor: '#3B82F6', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', marginTop: '8px' }}>Save Changes</button></form></BeautifulModal>
+      <BeautifulModal isOpen={alertModal.isOpen} onClose={() => setAlertModal({ isOpen: false, title: '', message: '', icon: '' })} title={alertModal.title} icon={alertModal.icon}><p style={{ margin: '0 0 20px 0', fontSize: '15px', textAlign: 'center', color: '#475569', fontWeight: '500' }}>{alertModal.message}</p><button onClick={() => setAlertModal({ isOpen: false, title: '', message: '', icon: '' })} style={{ width: '100%', padding: '14px', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', backgroundColor: alertModal.title === 'Success' ? '#10B981' : '#EF4444', color: '#FFFFFF' }}>OK</button></BeautifulModal>
     </div>
   );
 }

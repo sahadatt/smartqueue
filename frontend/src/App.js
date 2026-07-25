@@ -18,16 +18,10 @@ const socket = io(BACKEND_URL);
 function App() {
   useEffect(() => {
     const imagesToPreload = [
-      "/images/plate-bg.webp",
-      "/images/serving.webp",
-      "/images/namaste.webp",
-      "/images/doctor.webp",
-      "/images/people.webp",
-      "/images/hospital-logo.webp",
-      "/images/people.webp",
-      "/images/hourglass.webp"
+      "/images/plate-bg.webp", "/images/serving.webp", "/images/namaste.webp",
+      "/images/doctor.webp", "/images/people.webp", "/images/hospital-logo.webp",
+      "/images/people.webp", "/images/hourglass.webp"
     ];
-
     imagesToPreload.forEach((imageSrc) => {
       const preloadImage = new Image();
       preloadImage.src = imageSrc;
@@ -39,11 +33,30 @@ function App() {
   const [patients, setPatients] = useState([]);
   const [initialLoad, setInitialLoad] = useState(false);
   
-  // 🌟 FIX: Checking both storages (Local and Session) to ensure the token is not missed
   const [authToken, setAuthToken] = useState(localStorage.getItem('token') || sessionStorage.getItem('token'));
   const [adminUser, setAdminUser] = useState(localStorage.getItem('username') || sessionStorage.getItem('username'));
   
+  const [doctorDetails, setDoctorDetails] = useState(null);
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', title: 'System Info', icon: 'ℹ️' });
+
+  // 🌟 FIX: Fetching actual Doctor Name from backend instead of just Username
+  useEffect(() => {
+    if (authToken) {
+      fetch(`${BACKEND_URL}/api/auth/admin-profile`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && !data.error) {
+            setDoctorDetails({
+              clinicName: data.clinicName || "LIFE CARE",
+              doctorName: data.doctorName || "Dr. Sahadat Ansari", // 👈 Naya Data
+              degree: data.degree || "MBBS, MD",
+              mobile: data.mobile || "+91 0000000000"
+            });
+          }
+        })
+        .catch(err => console.error("Error fetching admin profile:", err));
+    }
+  }, [authToken]);
 
   useEffect(() => {
     socket.on('queue-updated', (data) => { 
@@ -58,8 +71,7 @@ function App() {
     });
     
     return () => { 
-      socket.off('queue-updated'); 
-      socket.off('reset-status-response'); 
+      socket.off('queue-updated'); socket.off('reset-status-response'); 
     };
   }, []);
 
@@ -75,38 +87,23 @@ function App() {
               totalTokensDistributed={totalTokensDistributed} 
               patients={patients} 
               username={adminUser} 
+              doctorDetails={doctorDetails} 
               socket={socket} 
               onLogout={() => { 
-                localStorage.clear(); 
-                sessionStorage.clear(); 
-                setAuthToken(null); 
-                window.location.reload(); 
+                localStorage.clear(); sessionStorage.clear(); setAuthToken(null); setDoctorDetails(null); window.location.reload(); 
               }} 
             /> 
             : 
             <Auth onLoginSuccess={(user) => { 
-              // 🌟 FIX: Set state immediately upon login so the dashboard opens without a page reload
               const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-              setAuthToken(token);
-              setAdminUser(user);
+              setAuthToken(token); setAdminUser(user);
             }} />
         } />
       </Routes>
       
-      {/* Premium System Alert Modal */}
       <BeautifulModal isOpen={alertModal.isOpen} onClose={() => setAlertModal({ ...alertModal, isOpen: false })} title={alertModal.title} icon={alertModal.icon}>
-        <p style={{ margin: '0 0 24px 0', color: '#64748B', fontSize: '15px', textAlign: 'center', fontWeight: '500' }}>
-          {alertModal.message}
-        </p>
-        <button 
-          onClick={() => setAlertModal({ ...alertModal, isOpen: false })} 
-          style={{ 
-            width: '100%', padding: '14px', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '700', cursor: 'pointer',
-            backgroundColor: alertModal.icon === '✅' ? '#10B981' : '#EF4444', 
-            color: '#FFFFFF',
-            boxShadow: alertModal.icon === '✅' ? '0 10px 15px -3px rgba(16, 185, 129, 0.3)' : '0 10px 15px -3px rgba(239, 68, 68, 0.3)'
-          }}
-        >
+        <p style={{ margin: '0 0 24px 0', color: '#64748B', fontSize: '15px', textAlign: 'center', fontWeight: '500' }}>{alertModal.message}</p>
+        <button onClick={() => setAlertModal({ ...alertModal, isOpen: false })} style={{ width: '100%', padding: '14px', border: 'none', borderRadius: '12px', fontSize: '16px', fontWeight: '700', cursor: 'pointer', backgroundColor: alertModal.icon === '✅' ? '#10B981' : '#EF4444', color: '#FFFFFF' }}>
           {alertModal.icon === '✅' ? 'Awesome, Thanks!' : 'Understood'}
         </button>
       </BeautifulModal>

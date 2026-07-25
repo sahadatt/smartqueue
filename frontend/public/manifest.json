@@ -3,12 +3,12 @@
   "name": "SmartQueue Admin Panel",
   "icons": [
     {
-      "src": "/images/logo.webp",
+      "src": "/images/hospital-logo.webp",
       "type": "image/webp",
       "sizes": "192x192"
     },
     {
-      "src": "/images/logo.webp",
+      "src": "/images/hospital-logo.webp",
       "type": "image/webp",
       "sizes": "512x512"
     }
