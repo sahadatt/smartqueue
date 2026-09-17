@@ -1,8 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiX, FiCheck, FiAlertTriangle, FiInfo, FiTrash2 } from 'react-icons/fi';
 
 export default function BeautifulModal({ isOpen, onClose, title, icon, children }) {
-  if (!isOpen) return null;
+  const [render, setRender] = useState(isOpen);
+  const [isClosing, setIsClosing] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setRender(true);
+      setIsClosing(false);
+    } else if (render) {
+      setIsClosing(true);
+      const timer = setTimeout(() => {
+        setRender(false);
+        setIsClosing(false);
+      }, 250); 
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, render]);
+
+  if (!render) return null;
 
   // Theme Logic: Set modern icons and colors based on the emoji
   let themeColor = '#1A73E8'; // Default Blue (Info)
@@ -24,14 +41,37 @@ export default function BeautifulModal({ isOpen, onClose, title, icon, children 
   }
 
   return (
-    <div style={styles.overlay}>
-      <div style={styles.modal}>
-        {/* Close Button */}
+    <div style={styles.overlay} className={isClosing ? 'modal-overlay-fade-out' : 'modal-overlay-fade-in'}>
+      
+      <style>{`
+        @keyframes smoothZoomIn {
+          0% { transform: scale(0.85); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes smoothZoomOut {
+          0% { transform: scale(1); opacity: 1; }
+          100% { transform: scale(0.85); opacity: 0; }
+        }
+        @keyframes fadeOverlayIn {
+          0% { opacity: 0; }
+          100% { opacity: 1; }
+        }
+        @keyframes fadeOverlayOut {
+          0% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+        .modal-overlay-fade-in { animation: fadeOverlayIn 0.25s ease forwards; }
+        .modal-overlay-fade-out { animation: fadeOverlayOut 0.25s ease forwards; }
+        .modal-box-zoom-in { animation: smoothZoomIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .modal-box-zoom-out { animation: smoothZoomOut 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      `}</style>
+
+      <div className={isClosing ? 'modal-box-zoom-out' : 'modal-box-zoom-in'} style={styles.modal}>
+        
         <button onClick={onClose} style={styles.closeButton}>
           <FiX size={18} />
         </button>
 
-        {/* Glowing Icon (Premium Look) */}
         <div style={styles.iconContainer}>
           <div style={{ ...styles.iconOuterCircle, backgroundColor: bgLight }}>
             <div style={{ ...styles.iconInnerCircle, backgroundColor: themeColor, boxShadow: `0 10px 20px -5px ${themeColor}` }}>
@@ -40,10 +80,8 @@ export default function BeautifulModal({ isOpen, onClose, title, icon, children 
           </div>
         </div>
 
-        {/* Title */}
         <h2 style={styles.title}>{title}</h2>
 
-        {/* Content (Text & Buttons) */}
         <div style={styles.contentContainer}>
           {children}
         </div>
@@ -54,7 +92,7 @@ export default function BeautifulModal({ isOpen, onClose, title, icon, children 
 
 const styles = {
   overlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(5px)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 99999 },
-  modal: { backgroundColor: '#ffffff', borderRadius: '24px', width: '90%', maxWidth: '380px', padding: '32px 24px 24px', position: 'relative', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', animation: 'popIn 0.3s ease-out' },
+  modal: { backgroundColor: '#ffffff', borderRadius: '24px', width: '90%', maxWidth: '380px', padding: '32px 24px 24px', position: 'relative', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' },
   closeButton: { position: 'absolute', top: '16px', right: '16px', background: '#F1F5F9', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#64748B', cursor: 'pointer', transition: '0.2s' },
   iconContainer: { display: 'flex', justifyContent: 'center', marginBottom: '20px' },
   iconOuterCircle: { width: '86px', height: '86px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center' },

@@ -1,58 +1,91 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FiAlertTriangle, FiX, FiTrash2 } from 'react-icons/fi';
 
 export default function ResetQueueModal({ isOpen, onClose, onConfirm, password, setPassword }) {
-  if (!isOpen) return null;
+  // Exit animation ke liye local states
+  const [render, setRender] = useState(isOpen);
+  const [isClosing, setIsClosing] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setRender(true);
+      setIsClosing(false);
+    } else if (render) {
+      setIsClosing(true);
+      // 300ms exit timer
+      const timer = setTimeout(() => {
+        setRender(false);
+        setIsClosing(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, render]);
+
+  if (!render) return null;
 
   return (
-    <div style={styles.overlay}>
-      <div style={styles.modal}>
-        {/* Top Right Close Button */}
-        <button onClick={onClose} style={styles.closeButton}>
-          <FiX size={18} />
-        </button>
+    <>
+      <style>{`
+        @keyframes overlayFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes overlayFadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes modalPopIn { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes modalPopOut { from { transform: scale(1); opacity: 1; } to { transform: scale(0.85); opacity: 0; } }
 
-        {/* Warning Icon (Matched with image) */}
-        <div style={styles.iconContainer}>
-          <div style={styles.iconOuterCircle}>
-            <div style={styles.iconInnerCircle}>
-              <FiAlertTriangle size={28} color="#FFFFFF" />
+        .rq-overlay-enter { animation: overlayFadeIn 0.3s ease forwards; }
+        .rq-overlay-exit { animation: overlayFadeOut 0.3s ease forwards; }
+        .rq-box-enter { animation: modalPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .rq-box-exit { animation: modalPopOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      `}</style>
+
+      <div style={styles.overlay} className={isClosing ? 'rq-overlay-exit' : 'rq-overlay-enter'}>
+        <div style={styles.modal} className={isClosing ? 'rq-box-exit' : 'rq-box-enter'}>
+          {/* Top Right Close Button */}
+          <button onClick={onClose} style={styles.closeButton}>
+            <FiX size={18} />
+          </button>
+
+          {/* Warning Icon (Matched with image) */}
+          <div style={styles.iconContainer}>
+            <div style={styles.iconOuterCircle}>
+              <div style={styles.iconInnerCircle}>
+                <FiAlertTriangle size={28} color="#FFFFFF" />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Text Details */}
-        <h2 style={styles.title}>Reset Queue?</h2>
-        <p style={styles.subtitle}>
-          You are about to delete all patient data. Please enter the Admin Password to confirm.
-        </p>
+          {/* Text Details */}
+          <h2 style={styles.title}>Reset Queue?</h2>
+          <p style={styles.subtitle}>
+            Enter admin password to delete all patient data.
+          </p>
 
-        {/* Password Input Area */}
-        <input
-          type="password"
-          placeholder="Enter Admin Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={styles.input}
-        />
+          {/* Password Input Area */}
+          <input
+            type="password"
+            placeholder="Enter Admin Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={styles.input}
+          />
 
-        {/* Divider */}
-        <div style={styles.divider}></div>
+          {/* Divider */}
+          <div style={styles.divider}></div>
 
-        {/* Action Buttons (Matched with image) */}
-        <div style={styles.buttonContainer}>
-          <button onClick={onClose} style={styles.cancelBtn}>
-            <div style={styles.cancelIconBox}><FiX size={12} /></div> 
-            Cancel
-          </button>
-          
-          <button onClick={onConfirm} style={styles.confirmBtn}>
-            <div style={styles.confirmIconBox}><FiTrash2 size={12} /></div> 
-            Yes, Reset
-          </button>
+          {/* Action Buttons (Matched with image) */}
+          <div style={styles.buttonContainer}>
+            <button onClick={onClose} style={styles.cancelBtn}>
+              <div style={styles.cancelIconBox}><FiX size={12} /></div> 
+              Cancel
+            </button>
+            
+            <button onClick={onConfirm} style={styles.confirmBtn}>
+              <div style={styles.confirmIconBox}><FiTrash2 size={12} /></div> 
+              Yes, Reset
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

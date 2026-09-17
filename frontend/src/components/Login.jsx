@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiLoader, FiActivity, FiUser, FiLock, FiEye, FiEyeOff, FiChevronRight, FiAlertCircle, FiShield, FiHome, FiAward, FiPhone, FiUserPlus } from 'react-icons/fi';
+import { FiLoader, FiActivity, FiUser, FiLock, FiEye, FiEyeOff, FiChevronRight, FiAlertCircle, FiHome, FiAward, FiPhone, FiUserPlus, FiLogIn } from 'react-icons/fi';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || `http://${window.location.hostname}:5000`;
 
@@ -8,7 +8,7 @@ export default function Login({ onLoginSuccess }) {
   const [username, setUsername] = useState(''); 
   const [password, setPassword] = useState(''); 
   
-  const [doctorName, setDoctorName] = useState(''); // 🌟 NAYA FIELD
+  const [doctorName, setDoctorName] = useState(''); 
   const [clinicName, setClinicName] = useState('');
   const [degree, setDegree] = useState('');
   const [mobile, setMobile] = useState('');
@@ -75,7 +75,6 @@ export default function Login({ onLoginSuccess }) {
         const res = await fetch(`${BACKEND_URL}/api/auth/signup`, { 
           method: 'POST', 
           headers: { 'Content-Type': 'application/json' }, 
-          // 🌟 NAYA PAYLOAD
           body: JSON.stringify({ 
             username: username.trim(), 
             password,
@@ -111,15 +110,16 @@ export default function Login({ onLoginSuccess }) {
         
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={styles.checkinTopSection}>
+            
+            {/* 🔥 NEW LOGIN / SIGNUP ICON 🔥 */}
             <div style={styles.checkinLogoCircle}>
-              <div style={styles.clipboardBody}>
-                <div style={styles.clipboardTop}></div>
-                <div style={styles.clipboardCrossBox}>✚</div>
-                <div style={styles.clipboardLine}></div>
-                <div style={styles.clipboardLine}></div>
-                <div style={styles.clipboardLineShort}></div>
-              </div>
+              {isLogin ? (
+                <FiLogIn size={26} color="#2563EB" style={{ marginLeft: '2px' }} />
+              ) : (
+                <FiUserPlus size={26} color="#2563EB" />
+              )}
             </div>
+
             <h1 style={styles.checkinTitle}>Clinic {isLogin ? 'Login' : 'Signup'}</h1>
             <p style={styles.checkinSubtitle}>{isLogin ? 'Welcome back! Please enter your details.' : 'Create your admin account to get started.'}</p>
             <div style={styles.checkinDividerWrapper}>
@@ -155,7 +155,6 @@ export default function Login({ onLoginSuccess }) {
 
               {!isLogin && (
                 <>
-                  {/* 🌟 NAYA FIELD: Doctor Name */}
                   <div>
                     <label style={styles.checkinLabel}><div style={styles.checkinLabelIcon}><FiUserPlus size={12} color="#1A73E8"/></div>Doctor's Name</label>
                     <div style={{ ...styles.checkinInputWrapper, borderColor: doctorNameError ? '#EF4444' : (focusedInput === 'docname' ? '#1A73E8' : '#E2E8F0'), boxShadow: focusedInput === 'docname' ? '0 0 0 3px rgba(26,115,232,0.1)' : 'none' }}>
@@ -210,7 +209,14 @@ export default function Login({ onLoginSuccess }) {
             </form>
           </div>
 
-          <div style={styles.checkinFooterText}><FiShield size={12} color="#2563EB" /> Your Health, Our Priority</div>
+          <div style={styles.checkinFooterText}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.85 }}>
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <polyline points="9 12 11 14 15 10"></polyline>
+            </svg>
+            Your Health, Our Priority
+          </div>
+          
           <p style={styles.toggleText}>
             {isLogin ? <>Need a new account? <span onClick={handleModeSwitch} style={styles.link}>Sign up</span></> : <>Already have an account? <span onClick={handleModeSwitch} style={styles.link}>Log in</span></>}
           </p>
@@ -228,11 +234,6 @@ const styles = {
   bgWaveBottom: { position: 'absolute', bottom: 0, left: 0, width: '100%', height: '110px', background: "url('data:image/svg+xml;utf8,<svg viewBox=\"0 0 1440 320\" xmlns=\"http://www.w3.org/2000/svg\"><path fill=\"%23EFF6FF\" fill-opacity=\"1\" d=\"M0,224L48,229.3C96,235,192,245,288,229.3C384,213,480,171,576,154.7C672,139,768,149,864,165.3C960,181,1056,203,1152,208C1248,213,1344,203,1392,197.3L1440,192L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z\"></path></svg>')", backgroundSize: 'cover', backgroundPosition: 'bottom', zIndex: 0 },
   checkinTopSection: { display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '14px' },
   checkinLogoCircle: { backgroundColor: '#FFFFFF', width: '60px', height: '60px', borderRadius: '50%', display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '10px', boxShadow: '0 10px 25px rgba(37,99,235,0.15)', position: 'relative' },
-  clipboardBody: { backgroundColor: '#2563EB', width: '26px', height: '34px', borderRadius: '5px', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '6px', gap: '3px', position: 'relative' },
-  clipboardTop: { position: 'absolute', top: '-4px', backgroundColor: '#93C5FD', width: '12px', height: '6px', borderRadius: '2px' },
-  clipboardCrossBox: { backgroundColor: '#FFFFFF', width: '13px', height: '13px', borderRadius: '3px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#2563EB', fontSize: '10px', fontWeight: '900', margin: '0 0 1px 0' },
-  clipboardLine: { backgroundColor: '#FFFFFF', width: '15px', height: '2px', borderRadius: '2px', opacity: 0.9 },
-  clipboardLineShort: { backgroundColor: '#FFFFFF', width: '10px', height: '2px', borderRadius: '2px', opacity: 0.9, alignSelf: 'flex-start', marginLeft: '6px' },
   checkinTitle: { fontSize: '22px', fontWeight: '800', color: '#1E293B', margin: '0 0 4px 0', letterSpacing: '-0.5px' },
   checkinSubtitle: { fontSize: '12px', color: '#64748B', fontWeight: '500', margin: 0, textAlign: 'center' },
   checkinDividerWrapper: { display: 'flex', alignItems: 'center', gap: '8px', width: '60%', marginTop: '12px' },

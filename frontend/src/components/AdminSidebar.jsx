@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiMenu, FiUserPlus, FiBell, FiTrash2, FiPlay, FiSquare, FiClock } from 'react-icons/fi'; 
+import { FiMenu, FiUserPlus, FiBell, FiTrash, FiTrash2, FiClock } from 'react-icons/fi'; 
 
 export default function AdminSidebar({ 
   isSidebarOpen, 
@@ -17,7 +17,7 @@ export default function AdminSidebar({
   localStatus = 'not-started',
   handleStatusChange,
   setPauseModalOpen,
-  setStartModalOpen
+  isTimeReached
 }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
@@ -65,7 +65,6 @@ export default function AdminSidebar({
       }}
     >
       
-      {/* Professional Button & Animation Styling */}
       <style>{`
         .qa-btn {
           display: flex;
@@ -117,56 +116,27 @@ export default function AdminSidebar({
         }
       `}</style>
 
-      {/* Background Image Container */}
-      <div style={{ 
-        position: 'absolute', 
-        inset: 0, 
-        zIndex: 0,
-        pointerEvents: 'none'
-      }}>
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
         <img 
           src="/images/sidebar-hospital.webp" 
           alt="Sidebar Hospital"
-          style={{ 
-            width: '100%', 
-            height: '100%', 
-            objectFit: 'cover',
-            opacity: '0.85' 
-          }} 
+          style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: '0.85' }} 
         />
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(to bottom, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.2) 40%, rgba(255,255,255,0.75) 100%)'
-        }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.2) 40%, rgba(255,255,255,0.75) 100%)' }} />
       </div>
 
-      {/* Top Header */}
       <div 
         onClick={() => setIsSidebarOpen(false)} 
-        style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: isMobile ? '8px' : '15px',
-          padding: isMobile ? '16px 12px 10px 12px' : '24px 24px 10px 24px', 
-          cursor: 'pointer', 
-          zIndex: 10, 
-          flexShrink: 0,
-          backgroundColor: 'transparent' 
-        }}
+        style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '15px', padding: isMobile ? '16px 12px 10px 12px' : '24px 24px 10px 24px', cursor: 'pointer', zIndex: 10, flexShrink: 0, backgroundColor: 'transparent' }}
       >
         <FiMenu size={24} color="#1A73E8" />
-        <span style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: '800', color: '#0F2942' }}>
-          Dashboard
-        </span>
+        <span style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: '800', color: '#0F2942' }}>Dashboard</span>
       </div>
 
       <div style={{ flex: 1, position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
         {isMobile && (
           <div style={{ padding: '8px 4px', marginBottom: '8px', backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: '8px', flexShrink: 0, margin: '0 8px' }}>
-            <div style={{ fontSize: '9px', marginBottom: '6px', color: '#64748B', fontWeight: 'bold', textAlign: 'center' }}>
-              QUEUE STATS
-            </div>
+            <div style={{ fontSize: '9px', marginBottom: '6px', color: '#64748B', fontWeight: 'bold', textAlign: 'center' }}>QUEUE STATS</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div onClick={() => { setActiveFilter('all'); setIsSidebarOpen(false); }} style={{ padding: '5px 6px', borderRadius: '6px', backgroundColor: activeFilter === 'all' ? '#EFF6FF' : '#F8FAFC', border: '1px solid', borderColor: activeFilter === 'all' ? '#3B82F6' : '#E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', fontSize: '10px' }}>
                 <span style={{ color: '#1E293B', fontWeight: '600' }}>Total</span>
@@ -184,32 +154,13 @@ export default function AdminSidebar({
                 <span style={{ color: '#5B21B6', fontWeight: '600' }}>Wait</span>
                 <span style={{ backgroundColor: '#EDE9FE', color: '#6D28D9', padding: '1px 4px', borderRadius: '4px', fontWeight: 'bold' }}>{remainingCount}</span>
               </div>
-              <div onClick={() => { setActiveFilter('deleted'); setIsSidebarOpen(false); }} style={{ padding: '5px 6px', borderRadius: '6px', backgroundColor: activeFilter === 'deleted' ? '#FEF2F2' : '#F8FAFC', border: '1px solid', borderColor: activeFilter === 'deleted' ? '#EF4444' : '#E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', fontSize: '10px' }}>
-                <span style={{ color: '#991B1B', fontWeight: '600' }}>Deleted</span>
-                <span style={{ backgroundColor: '#FEE2E2', color: '#DC2626', padding: '1px 4px', borderRadius: '4px', fontWeight: 'bold' }}>{deletedCount}</span>
-              </div>
             </div>
           </div>
         )}
 
-        {/* System Controls Bottom Section */}
         <div className="quick-actions-sidebar" style={{ marginTop: 'auto', position: 'relative', zIndex: 10, flexShrink: 0, paddingBottom: isMobile ? '80px' : '20px', padding: isMobile ? '8px 8px 80px 8px' : '16px 20px', backgroundColor: 'transparent' }}>
           
-          {/* 🌟 Green Gradient Title */}
-          <div className="qa-title" style={{ fontSize: isMobile ? '9px' : '11px', textAlign: isMobile ? 'center' : 'left', marginBottom: '8px', fontWeight: '800', letterSpacing: '0.8px', background: 'linear-gradient(90deg, #059669, #10B981)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-        
-          </div>
-
-          {/* 1. Start / End Session Button (Top) */}
-          <button 
-            className="qa-btn" 
-            onClick={() => localStatus === 'not-started' ? setStartModalOpen(true) : handleStatusChange('not-started')}
-          >
-            {localStatus === 'not-started' ? <FiPlay size={16} color="#10B981" /> : <FiSquare size={16} color="#EF4444" />} 
-            {!isMobile && (localStatus === 'not-started' ? "Start Session" : "End Session")}
-          </button>
-
-          {/* 2. Pause / Resume Button (Below Start) */}
+          {/* Pause / Resume Button */}
           <button 
             className="qa-btn" 
             disabled={!isSessionStarted}
@@ -219,7 +170,7 @@ export default function AdminSidebar({
             {!isMobile && (isSessionActive ? "Pause Session" : "Resume Session")}
           </button>
 
-          {/* 3. Issue New Token */}
+          {/* Issue New Token */}
           <button 
             className="qa-btn" 
             onClick={() => window.open('/checkin', '_blank')}
@@ -227,7 +178,7 @@ export default function AdminSidebar({
             <FiUserPlus size={16} color="#1A73E8" /> {!isMobile && "Issue New Token"}
           </button>
           
-          {/* 4. Call Next Patient */}
+          {/* Call Next Patient */}
           <button 
             className="qa-btn" 
             disabled={isNextDisabled || !isSessionActive} 
@@ -235,8 +186,22 @@ export default function AdminSidebar({
           >
             <FiBell size={16} color="#00E396" /> {!isMobile && "Call Next Patient"}
           </button>
+
+          {/* 🔥 DELETED HISTORY BUTTON (With Dustbin Icon - FiTrash) */}
+          <button 
+            className="qa-btn" 
+            onClick={() => { setActiveFilter('deleted'); if(isMobile) setIsSidebarOpen(false); }}
+          >
+            <FiTrash size={16} color="#64748B" /> 
+            {!isMobile && (
+              <span style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                <span>Deleted History</span>
+                <span style={{ backgroundColor: '#F1F5F9', color: '#475569', padding: '1px 6px', borderRadius: '6px', fontSize: '12px', fontWeight: '800' }}>{deletedCount}</span>
+              </span>
+            )}
+          </button>
           
-          {/* 5. Reset Queue */}
+          {/* Reset Queue (Kept original FiTrash2 icon) */}
           <button 
             className="qa-btn qa-btn-danger" 
             onClick={() => setResetModal({ isOpen: true, password: '' })}

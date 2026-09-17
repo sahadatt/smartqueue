@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FiClipboard, FiUser, FiPhone, FiLoader } from 'react-icons/fi';
+import { FiClipboard, FiUser, FiMapPin, FiLoader } from 'react-icons/fi'; // 🔥 FIX: FiPhone ki jagah FiMapPin import kiya
 
 export default function ManualParchi({ walkInName, setWalkInName, walkInMobile, setWalkInMobile, handleManualCheckin, generatedParchi }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [isSubmitting, setIsSubmitting] = useState(false); // 🌟 Loading state
+  const [isSubmitting, setIsSubmitting] = useState(false); 
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -11,7 +11,6 @@ export default function ManualParchi({ walkInName, setWalkInName, walkInMobile, 
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 🌟 SUBMIT HANDLER: Jab tak token issue nahi hota, loading chalu rahegi
   const onSubmitForm = async (e) => {
     e.preventDefault();
     if (!walkInName.trim()) return;
@@ -24,7 +23,6 @@ export default function ManualParchi({ walkInName, setWalkInName, walkInMobile, 
     }
   };
 
-  // 💻 Desktop view
   if (!isMobile) {
     return (
       <div className="glass-card">
@@ -32,7 +30,15 @@ export default function ManualParchi({ walkInName, setWalkInName, walkInMobile, 
           @keyframes spin { 100% { transform: rotate(360deg); } } 
           .loading-spinner { animation: spin 1s linear infinite; display: inline-flex; }
 
-          {/* 🌟 Desktop Glowing Input Styles */}
+          /* 🔥 Inline message popup animation */
+          @keyframes smoothPop {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          .animated-success-msg {
+            animation: smoothPop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          }
+
           .desktop-glow-container {
             position: relative;
             display: flex;
@@ -84,13 +90,13 @@ export default function ManualParchi({ walkInName, setWalkInName, walkInMobile, 
           </div>
 
           <div className="desktop-glow-container">
-            <FiPhone className="desktop-glow-icon" size={16} />
+            {/* 🔥 FIX: Yahan Address/Location ka icon lagaya gaya hai */}
+            <FiMapPin className="desktop-glow-icon" size={16} />
             <input 
-              type="tel" 
-              maxLength="10" 
-              placeholder="Mobile Number" 
+              type="text" 
+              placeholder="Mobile / Address" 
               value={walkInMobile} 
-              onChange={(e) => setWalkInMobile(e.target.value.replace(/\D/g, ''))} 
+              onChange={(e) => setWalkInMobile(e.target.value)} 
               className="desktop-glow-input" 
             />
           </div>
@@ -100,7 +106,11 @@ export default function ManualParchi({ walkInName, setWalkInName, walkInMobile, 
           </button>
         </form>
 
-        {generatedParchi && <div style={{marginTop: '15px', padding: '10px', background: '#F8FBFF', border: '1px dashed #1A73E8', borderRadius: '8px', color: '#1A73E8', fontWeight: 'bold'}}>✅ Token #{generatedParchi.token} generated!</div>}
+        {generatedParchi && (
+          <div className="animated-success-msg" style={{marginTop: '15px', padding: '10px', background: '#F8FBFF', border: '1px dashed #1A73E8', borderRadius: '8px', color: '#1A73E8', fontWeight: 'bold'}}>
+            ✅ Token #{generatedParchi.token} generated!
+          </div>
+        )}
       </div>
     );
   }
@@ -120,6 +130,15 @@ export default function ManualParchi({ walkInName, setWalkInName, walkInMobile, 
       <style>{`
         @keyframes spin { 100% { transform: rotate(360deg); } } 
         .loading-spinner { animation: spin 1s linear infinite; display: inline-flex; }
+
+        /* 🔥 Inline message popup animation */
+        @keyframes smoothPop {
+          0% { transform: scale(0.9); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        .animated-success-msg {
+          animation: smoothPop 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
 
         .glow-input-container {
           position: relative;
@@ -212,14 +231,14 @@ export default function ManualParchi({ walkInName, setWalkInName, walkInMobile, 
         </div>
 
         <div className="glow-input-container">
-          <FiPhone className="glow-icon" size={14} />
+          {/* 🔥 FIX: Mobile view me bhi Address/Location ka icon lagaya gaya hai */}
+          <FiMapPin className="glow-icon" size={14} />
           <input 
-            type="tel" 
+            type="text" 
             className="glow-input"
-            maxLength="10" 
-            placeholder="Mobile Number" 
+            placeholder="Mobile / Address" 
             value={walkInMobile} 
-            onChange={(e) => setWalkInMobile(e.target.value.replace(/\D/g, ''))} 
+            onChange={(e) => setWalkInMobile(e.target.value)} 
           />
         </div>
 
@@ -236,7 +255,7 @@ export default function ManualParchi({ walkInName, setWalkInName, walkInMobile, 
       </form>
 
       {generatedParchi && (
-        <div style={{
+        <div className="animated-success-msg" style={{
           marginTop: '5px', 
           padding: '5px', 
           background: '#ECFDF5', 

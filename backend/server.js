@@ -50,13 +50,12 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', userSchema);
 
-// 🌟 FIX: added lastTokenUpdateTime for Server-Side Live Timer Sync
 const queueSchema = new mongoose.Schema({
   name: { type: String, default: 'Main Clinic Queue' },
   currentToken: { type: Number, default: 1 },
   totalTokensDistributed: { type: Number, default: 0 },
   clinicStatus: { type: String, default: 'not-started' },
-  lastTokenUpdateTime: { type: Number, default: Date.now } // Naya field
+  lastTokenUpdateTime: { type: Number, default: Date.now } 
 });
 const Queue = mongoose.model('Queue', queueSchema);
 
@@ -67,6 +66,16 @@ const patientSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 const Patient = mongoose.model('Patient', patientSchema);
+
+const deletedPatientSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  mobileNumber: { type: String, required: true },
+  tokenNumber: { type: Number, required: true },
+  createdAt: { type: Date },
+  deletedAt: { type: Date, default: Date.now },
+  deletedBy: { type: String, default: 'by admin' }
+});
+const DeletedPatient = mongoose.model('DeletedPatient', deletedPatientSchema);
 
 async function getOrCreateQueue() {
   let queue = await Queue.findOne({ name: 'Main Clinic Queue' });
@@ -89,12 +98,11 @@ async function broadcastQueueStatus() {
     clinicStatus: queue.clinicStatus,
     expectedStartTime: admin ? admin.expectedStartTime : '',
     timePerPatient: admin ? admin.timePerPatient : 5,
-    lastTokenUpdateTime: queue.lastTokenUpdateTime, // 🌟 Sent to frontend
-    serverTime: Date.now() // 🌟 Server ka exact time frontend ko bheja
+    lastTokenUpdateTime: queue.lastTokenUpdateTime, 
+    serverTime: Date.now() 
   });
 }
 
-// 🌟 FIX: API now sends serverTime and lastTokenUpdateTime
 app.get('/api/auth/clinic-status', async (req, res) => {
   try {
     const queue = await getOrCreateQueue();
@@ -103,8 +111,8 @@ app.get('/api/auth/clinic-status', async (req, res) => {
       status: queue.clinicStatus,
       expectedStartTime: admin ? admin.expectedStartTime : '',
       timePerPatient: admin ? admin.timePerPatient : 5,
-      lastTokenUpdateTime: queue.lastTokenUpdateTime, // 🌟 Added
-      serverTime: Date.now() // 🌟 Added
+      lastTokenUpdateTime: queue.lastTokenUpdateTime, 
+      serverTime: Date.now() 
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -122,72 +130,36 @@ app.get('/', (req, res) => {
 app.post('/api/auth/signup', async (req, res) => {
   try {
     const { username, password, doctorName, clinicName, degree, mobile } = req.body;
-
-    if (!username || !password) {
-      return res.status(400).json({ message: 'Username aur password bharna zaroori hai!' });
-    }
-
+    if (!username || !password) return res.status(400).json({ message: 'Username aur password bharna zaroori hai!' });
     const existingUser = await User.findOne({ username });
-    if (existingUser) {
-      return res.status(400).json({ message: '❌ Yeh username pehle se exist karta hai!' });
-    }
-
+    if (existingUser) return res.status(400).json({ message: '❌ Yeh username pehle se exist karta hai!' });
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-
-    const newUser = new User({ 
-      username, 
-      password: hashedPassword,
-      doctorName: doctorName || 'Dr. Sahadat Ansari',
-      clinicName: clinicName || 'LIFE CARE',
-      degree: degree || 'MBBS, MD',
-      mobile: mobile || '+91 0000000000'
-    });
-    
+    const newUser = new User({ username, password: hashedPassword, doctorName: doctorName || 'Dr. Sahadat Ansari', clinicName: clinicName || 'LIFE CARE', degree: degree || 'MBBS, MD', mobile: mobile || '+91 0000000000' });
     await newUser.save();
     res.status(201).json({ message: 'Registration successful!' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-
     if (!username || !password) return res.status(400).json({ message: 'Username aur password required hai!' });
-
     const user = await User.findOne({ username });
     if (!user) return res.status(400).json({ message: '❌ Invalid Username or Password!' });
-
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: '❌ Invalid Username or Password!' });
-
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'SECRET_KEY', { expiresIn: '1d' });
     res.json({ token, username: user.username });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.get('/api/auth/admin-profile', async (req, res) => {
   try {
     const user = await User.findOne();
     if (!user) return res.status(404).json({ message: 'Admin not found!' });
-    
-    res.status(200).json({
-      username: user.username,
-      profileImage: user.profileImage || '',
-      doctorName: user.doctorName,
-      clinicName: user.clinicName,
-      degree: user.degree,
-      mobile: user.mobile,
-      expectedStartTime: user.expectedStartTime,
-      timePerPatient: user.timePerPatient 
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    res.status(200).json({ username: user.username, profileImage: user.profileImage || '', doctorName: user.doctorName, clinicName: user.clinicName, degree: user.degree, mobile: user.mobile, expectedStartTime: user.expectedStartTime, timePerPatient: user.timePerPatient });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/auth/update-admin', async (req, res) => {
@@ -195,7 +167,6 @@ app.post('/api/auth/update-admin', async (req, res) => {
     const { username, password, profileImage, doctorName, clinicName, degree, mobile, expectedStartTime, timePerPatient } = req.body;
     const user = await User.findOne();
     if (!user) return res.status(404).json({ message: 'Admin user not found!' });
-
     if (username) user.username = username;
     if (profileImage) user.profileImage = profileImage;
     if (doctorName) user.doctorName = doctorName;
@@ -204,45 +175,33 @@ app.post('/api/auth/update-admin', async (req, res) => {
     if (mobile) user.mobile = mobile;
     if (expectedStartTime !== undefined) user.expectedStartTime = expectedStartTime;
     if (timePerPatient !== undefined) user.timePerPatient = Number(timePerPatient);
-    
     if (password && password.trim() !== "") {
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(password, salt);
     }
-
+    
     await user.save(); 
+    await broadcastQueueStatus(); 
+
     res.status(200).json({ message: 'Profile updated successfully!' });
-  } catch (err) {
-    if (err.code === 11000) return res.status(400).json({ message: 'Username already taken!' });
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { if (err.code === 11000) return res.status(400).json({ message: 'Username already taken!' }); res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/auth/delete-account', async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
-
     if (!user) return res.status(404).json({ message: 'User not found!' });
-
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: '❌ Incorrect Password! Account cannot be deleted.' });
-
     await User.deleteOne({ username });
-
     await Patient.deleteMany({});
+    await DeletedPatient.deleteMany({});
     const queue = await getOrCreateQueue();
-    queue.currentToken = 1;
-    queue.totalTokensDistributed = 0;
-    queue.clinicStatus = 'not-started';
-    queue.lastTokenUpdateTime = Date.now(); // 🌟 Reset Time
-    await queue.save();
-    await broadcastQueueStatus();
-
+    queue.currentToken = 1; queue.totalTokensDistributed = 0; queue.clinicStatus = 'not-started'; queue.lastTokenUpdateTime = Date.now();
+    await queue.save(); await broadcastQueueStatus();
     res.status(200).json({ message: 'Account and all data deleted successfully.' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ==========================================
@@ -252,38 +211,95 @@ app.post('/api/auth/patient-checkin', async (req, res) => {
   try {
     const { patientName, mobileNumber } = req.body;
     if (!patientName || !mobileNumber) return res.status(400).json({ message: 'patientName aur mobileNumber required hai!' });
-    const queue = await getOrCreateQueue();
-    queue.totalTokensDistributed++;
-    const myAssignedToken = queue.totalTokensDistributed < queue.currentToken ? queue.currentToken : queue.totalTokensDistributed;
-    queue.totalTokensDistributed = myAssignedToken;
-    await queue.save();
+    
+    await getOrCreateQueue();
+
+    const updatedQueue = await Queue.findOneAndUpdate(
+      { name: 'Main Clinic Queue' },
+      { $inc: { totalTokensDistributed: 1 } },
+      { returnDocument: 'after' }
+    );
+
+    let myAssignedToken = updatedQueue.totalTokensDistributed;
+
+    if (myAssignedToken < updatedQueue.currentToken) {
+      myAssignedToken = updatedQueue.currentToken;
+      await Queue.updateOne(
+        { name: 'Main Clinic Queue' }, 
+        { $set: { totalTokensDistributed: myAssignedToken } }
+      );
+    }
+
     const newPatient = new Patient({ name: patientName, mobileNumber, tokenNumber: myAssignedToken });
     await newPatient.save();
+    
     await broadcastQueueStatus();
     res.status(201).json({ myToken: myAssignedToken, patientName, mobileNumber, patientId: newPatient._id });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { 
+    res.status(500).json({ error: err.message }); 
+  }
 });
 
 app.post('/api/auth/patient-leave', async (req, res) => {
   try {
     const { tokenToRemove } = req.body;
     if (!tokenToRemove) return res.status(400).json({ message: 'tokenToRemove required hai!' });
-    await Patient.deleteOne({ tokenNumber: parseInt(tokenToRemove) });
+    const p = await Patient.findOne({ tokenNumber: parseInt(tokenToRemove) });
+    if (p) {
+      await DeletedPatient.create({
+        name: p.name,
+        mobileNumber: p.mobileNumber,
+        tokenNumber: p.tokenNumber,
+        createdAt: p.createdAt,
+        deletedBy: 'by user'
+      });
+      await Patient.deleteOne({ _id: p._id });
+    }
     await broadcastQueueStatus();
     res.status(200).json({ message: 'Left queue successfully' });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-io.on('connection', async (socket) => {
+app.post('/api/auth/auto-next', async (req, res) => {
   try {
-    await broadcastQueueStatus();
-  } catch (err) {}
+    const { currentLive } = req.body;
+    const queue = await getOrCreateQueue();
+    if (queue.currentToken === parseInt(currentLive) && queue.currentToken < queue.totalTokensDistributed) {
+      queue.currentToken++;
+      queue.lastTokenUpdateTime = Date.now();
+      await queue.save();
+      await broadcastQueueStatus();
+    }
+    res.status(200).json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/auth/deleted-patients', async (req, res) => {
+  try {
+    const list = await DeletedPatient.find().sort({ deletedAt: -1 });
+    res.status(200).json(list);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/auth/deleted-patients', async (req, res) => {
+  try {
+    await DeletedPatient.deleteMany({});
+    res.status(200).json({ message: 'Deleted history cleared' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+io.on('connection', async (socket) => {
+  try { await broadcastQueueStatus(); } catch (err) {}
 
   socket.on('update-clinic-status', async (status) => {
     try {
       const queue = await getOrCreateQueue();
       queue.clinicStatus = status;
-      if (status === 'active') queue.lastTokenUpdateTime = Date.now(); // 🌟 Doctor active hone par time set hoga
+      if (status === 'active') queue.lastTokenUpdateTime = Date.now(); 
       await queue.save();
       io.emit('clinic-status-changed', status);
       await broadcastQueueStatus();
@@ -295,7 +311,7 @@ io.on('connection', async (socket) => {
       const queue = await getOrCreateQueue();
       if (queue.currentToken < queue.totalTokensDistributed) {
         queue.currentToken++; 
-        queue.lastTokenUpdateTime = Date.now(); // 🌟 Next Patient par time reset hoga
+        queue.lastTokenUpdateTime = Date.now(); 
         await queue.save(); await broadcastQueueStatus();
       }
     } catch (err) {}
@@ -306,7 +322,7 @@ io.on('connection', async (socket) => {
       const queue = await getOrCreateQueue();
       if (queue.currentToken > 1) {
         queue.currentToken--; 
-        queue.lastTokenUpdateTime = Date.now(); // 🌟 Prev Patient par time reset hoga
+        queue.lastTokenUpdateTime = Date.now(); 
         await queue.save(); await broadcastQueueStatus();
       }
     } catch (err) {}
@@ -316,7 +332,17 @@ io.on('connection', async (socket) => {
     try {
       const { id } = data;
       if (!id || !mongoose.Types.ObjectId.isValid(id)) return;
-      await Patient.deleteOne({ _id: new mongoose.Types.ObjectId(id) });
+      const p = await Patient.findById(id);
+      if (p) {
+        await DeletedPatient.create({
+          name: p.name,
+          mobileNumber: p.mobileNumber,
+          tokenNumber: p.tokenNumber,
+          createdAt: p.createdAt,
+          deletedBy: 'by admin'
+        });
+        await Patient.deleteOne({ _id: new mongoose.Types.ObjectId(id) });
+      }
       await broadcastQueueStatus();
     } catch (err) {}
   });
@@ -334,17 +360,39 @@ io.on('connection', async (socket) => {
     try {
       const { username, password } = data;
       const user = await User.findOne({ username });
+      
       if (!user) return socket.emit('reset-status-response', { success: false, message: '❌ Account validation failed!' });
+      
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) return socket.emit('reset-status-response', { success: false, message: '❌ Incorrect Admin Password! Access Denied.' });
+      
+      const activePatients = await Patient.find({});
+      if (activePatients.length > 0) {
+        const resetTime = new Date();
+        const historyDocs = activePatients.map(p => ({
+          name: p.name,
+          mobileNumber: p.mobileNumber,
+          tokenNumber: p.tokenNumber,
+          createdAt: p.createdAt,
+          deletedAt: resetTime,
+          deletedBy: 'by admin'
+        }));
+        await DeletedPatient.insertMany(historyDocs);
+      }
+
       await Patient.deleteMany({});
       const queue = await getOrCreateQueue();
-      queue.currentToken = 1; queue.totalTokensDistributed = 0; queue.clinicStatus = 'not-started'; 
-      queue.lastTokenUpdateTime = Date.now(); // 🌟 Reset Queue par time reset
+      queue.currentToken = 1; 
+      queue.totalTokensDistributed = 0; 
+      queue.clinicStatus = 'not-started'; 
+      queue.lastTokenUpdateTime = Date.now(); 
       await queue.save();
+      
       await broadcastQueueStatus();
-      socket.emit('reset-status-response', { success: true, message: '♻️ System Reset Successful! All counters set to 1.' });
-    } catch (err) { socket.emit('reset-status-response', { success: false, message: '❌ Critical internal database error.' }); }
+      
+    } catch (err) { 
+      socket.emit('reset-status-response', { success: false, message: '❌ Critical internal database error.' }); 
+    }
   });
 });
 
